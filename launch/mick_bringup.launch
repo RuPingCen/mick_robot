@@ -1,0 +1,8 @@
+<launch>
+
+
+  <node pkg="mick_robot" type="mick_robot" name="mick_robot" output="screen">
+
+ 
+  </node>
+</launch>
