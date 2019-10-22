@@ -80,18 +80,16 @@ union IntData //union的作用为实现char数组和int16数据类型之间的�
     unsigned char byte_data[2];
 }speed_rpm;
 
-// static tf::TransformBroadcaster odom_broadcaster;//定义tf对象
-// geometry_msgs::TransformStamped odom_trans;//创建一个tf发布需要使用的TransformStamped类型消息
-// nav_msgs::Odometry odom;//定义里程计对象
-// geometry_msgs::Quaternion odom_quat; //四元数变量
+ 
 
+void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
-void send_rpm_to_chassis( int v1, int v2, int v3, int v4);
+void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
 void clear_odometry_chassis(void);
- void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 bool analy_uart_recive_data( std_msgs::String serial_data);
-void calculate_position_by_odometry(void);
+void calculate_position_for_odometry(void);
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
+
 int main(int argc,char** argv)
 {
     string out_result;
@@ -105,20 +103,40 @@ int main(int argc,char** argv)
 //     sp.set_option(serial_port::stop_bits());
 //     sp.set_option(serial_port::character_size(8));
 
+        string sub_cmdvel_topic,pub_odom_topic,dev;
+	int buad,time_out,hz;
  	ros::init(argc, argv, "mickrobot");
 	 ros::NodeHandle n;
+	 
+	 
+	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
+	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
+	n.param<std::string>("dev", dev, "/dev/mick");
+	n.param<int>("buad", buad, 115200);
+	n.param<int>("time_out", time_out, 1000);
+	n.param<int>("hz", hz, 50);
+	
+	ROS_INFO_STREAM("sub_cmdvel_topic:   "<<sub_cmdvel_topic);
+	ROS_INFO_STREAM("pub_odom_topic:   "<<pub_odom_topic);
+	ROS_INFO_STREAM("dev:   "<<dev);
+	ROS_INFO_STREAM("buad:   "<<buad);
+	ROS_INFO_STREAM("time_out:   "<<time_out);
+	ROS_INFO_STREAM("hz:   "<<hz);
+	
+	
+	
 	 //订阅主题command
-	 ros::Subscriber command_sub = n.subscribe("/cmd_vel", 10, cmd_vel_callback);
+	 ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
 	 //发布主题sensor
 	 //ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
-        odom_pub= n.advertise<nav_msgs::Odometry>("odom", 20); //定义要发布/odom主题
+        odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	// 开启串口模块
 	 try
 	 {
-	    ros_ser.setPort("/dev/mick");
-	    ros_ser.setBaudrate(115200);
+	    ros_ser.setPort(dev);
+	    ros_ser.setBaudrate(buad);
 	    //ros_serial::Timeout to = serial::Timeout::simpleTimeout(1000);
-	    serial::Timeout to = serial::Timeout::simpleTimeout(1000);
-
+	    serial::Timeout to = serial::Timeout::simpleTimeout(time_out);
 	    ros_ser.setTimeout(to);
 	    ros_ser.open();
 	    ros_ser.flushInput(); //清空缓冲区数据
@@ -138,7 +156,7 @@ int main(int argc,char** argv)
 	    return -1;
 	}
 	
-  ros::Rate loop_rate(50);
+  ros::Rate loop_rate(hz);
       
  clear_odometry_chassis();
  bool init_OK=false;
@@ -148,7 +166,6 @@ while(!init_OK)
 		     ROS_INFO_STREAM("clear odometry ..... ");
 		    if(ros_ser.available())
 			 {
-			   
 			    std_msgs::String serial_data;
 			    string str_tem;
 			    //获取串口数据
@@ -189,7 +206,7 @@ while(!init_OK)
 			   uart_recive_flag = analy_uart_recive_data(serial_data);
 			   if(uart_recive_flag)
 			   {
-			    calculate_position_by_odometry();
+			    calculate_position_for_odometry();
 			     //sensor_pub.publish(serial_data);//将串口数据发布到主题sensor
 			  }
 			   else
@@ -285,10 +302,14 @@ void send_speed_to_chassis(float x,float y,float w)
  
   //ros_ser.write(data_tem,counter);
 }
-void send_rpm_to_chassis( int v1, int v2, int v3, int v4)
+/**
+ * @function  发送四个点击的转速到底盘控制器
+ * ＠param w1 w2 w3 w4 表示四个电机的转速 单位　ｒｐｍ
+ */
+void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 {
   uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速便宜１００００转
+  unsigned int speed_0ffset=10000; //转速偏移１００００转
   unsigned char i,counter=0;
   unsigned char  cmd;
   unsigned int check=0;
@@ -298,17 +319,17 @@ void send_rpm_to_chassis( int v1, int v2, int v3, int v4)
   data_tem[counter++] =0x0B;
   data_tem[counter++] =cmd;
   
-  data_tem[counter++] =(v1+speed_0ffset)/256; // 
-  data_tem[counter++] =(v1+speed_0ffset)%256;
+  data_tem[counter++] =(w1+speed_0ffset)/256; // 
+  data_tem[counter++] =(w1+speed_0ffset)%256;
   
-  data_tem[counter++] =(v2+speed_0ffset)/256; // 
-  data_tem[counter++] =(v2+speed_0ffset)%256;
+  data_tem[counter++] =(w2+speed_0ffset)/256; // 
+  data_tem[counter++] =(w2+speed_0ffset)%256;
   
-  data_tem[counter++] =(v3+speed_0ffset)/256; // 
-  data_tem[counter++] =(v3+speed_0ffset)%256;
+  data_tem[counter++] =(w3+speed_0ffset)/256; // 
+  data_tem[counter++] =(w3+speed_0ffset)%256;
   
-  data_tem[counter++] =(v4+speed_0ffset)/256; // 
-  data_tem[counter++] =(v4+speed_0ffset)%256;
+  data_tem[counter++] =(w4+speed_0ffset)/256; // 
+  data_tem[counter++] =(w4+speed_0ffset)%256;
   
  
   for(i=0;i<counter;i++)
@@ -322,9 +343,10 @@ void send_rpm_to_chassis( int v1, int v2, int v3, int v4)
  
  ros_ser.write(data_tem,counter);
 }
+
 void clear_odometry_chassis(void)
 {
-    uint8_t data_tem[50];
+   uint8_t data_tem[50];
   unsigned int speed_0ffset=10000; //转速便宜１００００转
   unsigned char i,counter=0;
   unsigned char  cmd,resave=0x00;
@@ -360,6 +382,10 @@ void clear_odometry_chassis(void)
  ros_ser.write(data_tem,counter);
   
 }
+/**
+ * @function 解析串口发送过来的数据帧
+ * 成功则返回true　否则返回false
+ */
 bool  analy_uart_recive_data( std_msgs::String serial_data)
 {
   unsigned char reviced_tem[500];
@@ -461,14 +487,14 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
       }
           
 }
-/*
- * ＠function 利用里程计数据实现位置积分
+/**
+ * @function 利用里程计数据实现位置估计
  * 
  */
 float s1=0,s2=0,s3=0,s4=0;
 float s1_last=0,s2_last=0,s3_last=0,s4_last=0;
-  float position_x=0,position_y=0,position_w=0;
-void calculate_position_by_odometry(void)
+ float position_x=0,position_y=0,position_w=0;
+void calculate_position_for_odometry(void)
 {
   //方法１：　　计算每个轮子转动的位移，然后利用Ｆ矩阵合成Ｘ,Y,W三个方向的位移
   float s1_delta=0,s2_delta=0,s3_delta=0,s4_delta=0;
@@ -526,8 +552,8 @@ void calculate_position_by_odometry(void)
     publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
     //方法２;利用轮子的转速来推算
 }
-/*
- * 发布里程计的数据
+/**
+ * @function 发布里程计的数据
  * 
  */
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w)
@@ -570,48 +596,4 @@ void publish_odomtery(float  position_x,float position_y,float oriention,float v
             //发布里程计
             odom_pub.publish(odom);
 }
-bool display_IMU5211( unsigned char buf[21] ,timeval time_stamp,string &out_result)
-{
-        float ax,ay,az,gx,gy,gz,tempture;
-        int count;
-        short int temp; //需要一个16位的变量来存储这个带符号的数据
-
-        unsigned char check_valu=0x00;
-        for(int index =0;index < 20;index++)
-        {
-            check_valu +=buf[index];
-        }
-        if(buf[0] != 0xaa || buf[1]!=0x55 || check_valu!=buf[20])
-        {
-            cout<<"IMU5211 Uart data transmission error ....."<<endl;
-            return false;
-        }
-
-        count = ((buf[5]*256+buf[4])*256+buf[3])*256+buf[2];
-
-            temp = ( buf[6]+buf[7]*256 );
-        gx = temp*200/32768.0;
-            temp =( buf[8]+buf[9]*256 );
-        gy = temp*200/32768.0;
-            temp =( buf[10]+buf[11]*256 );
-        gz = temp*200/32768.0;
-
-            temp = ( buf[12]+buf[13]*256) ;
-        ax = temp*2/32768.0;
-            temp = ( buf[14]+buf[15]*256) ;
-        ay = temp*2/32768.0;
-            temp = ( buf[16]+buf[17]*256) ;
-        az = temp*2/32768.0;
-
-        tempture = ( buf[18]+buf[19]*256 )/10.0;
-
-        cout<<"time_stamp: "<< time_stamp.tv_sec<<"."<<time_stamp.tv_usec<<"  gx: "<<gx<<"  gy: "<<gy<<"  gz: "<<gz<<"  ax: "<<ax<<"  ay: "<<ay<<"  az: "<<az<<"  tempture: "<<tempture<<endl;
-      //     sprintf(rgb_str,"~/recordData/RGBD/rgb/%d.png",time_stamp);
-      // out_result <<time_stamp<<","<<gx<<","<<gy<<","<<gz<<","<<ax<<","<<ay<<","<<az<<","<<tempture;
-
-        ostringstream os;
-        os<<time_stamp.tv_sec<<"."<<time_stamp.tv_usec<<","<<gx<<","<<gy<<","<<gz<<","<<ax<<","<<ay<<","<<az<<","<<tempture<<'\n';
-        out_result =os.str();
-        return true;
-}
-
+ 
