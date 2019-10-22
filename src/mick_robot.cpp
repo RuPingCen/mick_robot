@@ -81,7 +81,6 @@ union IntData //union的作用为实现char数组和int16数据类型之间的�
 }speed_rpm;
 
  
-
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
@@ -94,6 +93,7 @@ int main(int argc,char** argv)
 {
     string out_result;
     bool uart_recive_flag;
+ 
 //     unsigned char buf[91];                      //定义字符串长度
 //     boost::asio::io_service iosev;
 //     serial_port sp(iosev, "/dev/ttyUSB0");         //定义传输的串口
@@ -102,12 +102,11 @@ int main(int argc,char** argv)
 //     sp.set_option(serial_port::parity());
 //     sp.set_option(serial_port::stop_bits());
 //     sp.set_option(serial_port::character_size(8));
-
+ 
         string sub_cmdvel_topic,pub_odom_topic,dev;
 	int buad,time_out,hz;
  	ros::init(argc, argv, "mickrobot");
 	 ros::NodeHandle n;
-	 
 	 
 	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
 	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
@@ -155,9 +154,9 @@ int main(int argc,char** argv)
 	{
 	    return -1;
 	}
-	
+ 
   ros::Rate loop_rate(hz);
-      
+ 
  clear_odometry_chassis();
  bool init_OK=false;
 while(!init_OK)	
@@ -192,6 +191,7 @@ while(!init_OK)
 // 			time_stamp =time_val.tv_sec+ time_val.tv_usec/1000000.0;
 // 			 cout<<"time:" <<  time_stamp<<endl;
                        //使用ＲＯＳ serial 
+ 
                          while(ros_ser.available()<63)
 			 {
 			   //ROS_INFO_STREAM("wait"); 
@@ -215,7 +215,6 @@ while(!init_OK)
 			    ros_ser.flushInput(); //清空缓冲区数据
 			    //sleep(0.5);            //延时0.1秒,确保有数据进入
 			   }
-			   
 			}
                        ros::spinOnce();
                        loop_rate.sleep();
@@ -302,6 +301,7 @@ void send_speed_to_chassis(float x,float y,float w)
  
   //ros_ser.write(data_tem,counter);
 }
+ 
 /**
  * @function  发送四个点击的转速到底盘控制器
  * ＠param w1 w2 w3 w4 表示四个电机的转速 单位　ｒｐｍ
@@ -310,6 +310,7 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 {
   uint8_t data_tem[50];
   unsigned int speed_0ffset=10000; //转速偏移１００００转
+
   unsigned char i,counter=0;
   unsigned char  cmd;
   unsigned int check=0;
@@ -318,7 +319,7 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
   data_tem[counter++] =0xEA;
   data_tem[counter++] =0x0B;
   data_tem[counter++] =cmd;
-  
+ 
   data_tem[counter++] =(w1+speed_0ffset)/256; // 
   data_tem[counter++] =(w1+speed_0ffset)%256;
   
@@ -330,7 +331,6 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
   
   data_tem[counter++] =(w4+speed_0ffset)/256; // 
   data_tem[counter++] =(w4+speed_0ffset)%256;
-  
  
   for(i=0;i<counter;i++)
   {
@@ -343,6 +343,7 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
  
  ros_ser.write(data_tem,counter);
 }
+ 
 
 void clear_odometry_chassis(void)
 {
@@ -382,6 +383,7 @@ void clear_odometry_chassis(void)
  ros_ser.write(data_tem,counter);
   
 }
+ 
 /**
  * @function 解析串口发送过来的数据帧
  * 成功则返回true　否则返回false
@@ -395,7 +397,7 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
   if(len<1)
   {
      return false;
-  }
+   }
    ROS_INFO_STREAM("Read: " << serial_data.data.size() );
 
   for( i=0;i<len;i++)
@@ -495,7 +497,7 @@ float s1=0,s2=0,s3=0,s4=0;
 float s1_last=0,s2_last=0,s3_last=0,s4_last=0;
  float position_x=0,position_y=0,position_w=0;
 void calculate_position_for_odometry(void)
-{
+ {
   //方法１：　　计算每个轮子转动的位移，然后利用Ｆ矩阵合成Ｘ,Y,W三个方向的位移
   float s1_delta=0,s2_delta=0,s3_delta=0,s4_delta=0;
   float v1=0,v2=0,v3=0,v4=0;
@@ -552,6 +554,7 @@ void calculate_position_for_odometry(void)
     publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
     //方法２;利用轮子的转速来推算
 }
+ 
 /**
  * @function 发布里程计的数据
  * 

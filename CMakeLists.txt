@@ -130,6 +130,11 @@ catkin_package(
 include_directories(
 	${catkin_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
+<<<<<<< HEAD
+=======
+	${PCL_INCLUDE_DIRS}
+	${kinect2_bridge_INCLUDE_DIRS}
+>>>>>>> a20d9b8bdbc646e69996b00aa9f620e88a91e92c
 )
 
 add_executable(mick_robot src/mick_robot.cpp)
