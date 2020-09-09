@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+ 
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+    <rosparam file="$(find p3at_navigation)/params/myparams/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/params/myparams/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/params/myparams/move_base_params.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/params/myparams/dwa_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/params/myparams/global_planner_params.yaml" command="load" />
+    
+  </node>
+
+</launch>

@@ -1,0 +1,139 @@
+# ns : global_costmap
+
+# The global frame for the costmap to operate in. (string, default: "/map")
+global_frame: map
+
+# The name of the frame for the base link of the robot.(string, default: "base_link")
+robot_base_frame: base_link
+
+# distance a circular robot should be clear of the obstacle (kobuki: 0.18)
+# robot_radius: 0.20  
+footprint: [[0.30, 0.25], [0.30, -0.25], [-0.30, -0.25],[-0.30, 0.25]]  # if the robot is not circular
+
+# used for obstacle_layer, 3D->voxel 2D->other
+map_type: costmap
+
+# Specifies the delay in transform (tf) data that is tolerable in seconds. This parameter serves as a safeguard to losing a link in the tf tree while still allowing an amount of latency the user is comfortable with to exist in the system. For example, a transform being 0.2 seconds out-of-date may be tolerable, but a transform being 8 seconds out of date is not. If the tf transform between the coordinate frames specified by the global_frame and robot_base_frame parameters is transform_tolerance seconds older than ros::Time::now(), then the navigation stack will stop the robot.(double, default: 0.2)
+transform_tolerance: 0.5
+
+# The frequency in Hz for the map to be updated.(double, default: 5.0)
+update_frequency: 5.0
+
+# The frequency in Hz for the map to be publish display information.(double, default: 0.0)
+publish_frequency: 0.0
+
+# Whether or not to use a rolling window version of the costmap. If the static_map parameter is set to true, this parameter must be set to false. (bool, default: false)
+rolling_window: false
+static_map: true
+
+# If true the full costmap is published to "~<name>/grid" every update. If false only the part of the costmap that has changed is published on the "~<name>/grid_updates" topic. (bool, default: false)
+always_send_full_costmap: false
+
+# Sequence of plugin specifications, one per layer. Each specification is a dictionary with name and type fields. The name is used to define the parameter namespace for the plugin.
+plugins:
+  - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+  - {name: obstacle_layer,          type: "costmap_2d::ObstacleLayer"}
+  - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+# The width of the map in meters.(int, default: 10)
+width: 5
+
+# The height of the map in meters.(int, default: 10)
+height: 5
+
+# The resolution of the map in meters/cell. (double, default: 0.05)
+resolution: 0.05
+
+# The x origin of the map in the global frame in meters. (double, default: 0.0)
+origin_x: 0.0
+
+# The y origin of the map in the global frame in meters. (double, default: 0.0)
+origin_y: 0.0
+
+#############################
+#
+#        static_layer
+#
+#############################
+static_layer:
+# The value for which a cost should be considered unknown when reading in a map from the map server. If the costmap is not tracking unknown space, costs of this value will be considered occupied. A value of zero also results in this parameter being unused. (int, default: -1)
+  unknown_cost_value: -1
+
+# The threshold value at which to consider a cost lethal when reading in a map from the map server.(int, default: 100)
+  lethal_cost_threshold: 100
+
+# The topic that the costmap subscribes to for the static map. This parameter is useful when you have multiple costmap instances within a single node that you want to use different static maps. (string, default: "map")
+  map_topic: map
+
+# Only subscribe to the first message on the map topic, ignoring all subsequent messages (bool, default: false)
+  first_map_only: false
+
+# In addition to map_topic, also subscribe to map_topic + "_updates" (bool, default: false)
+  subscribe_to_updates: false
+
+# If true, unknown values in the map messages are translated directly to the layer. Otherwise, unknown values in the map message are translated as FREE_SPACE in the layer.  (bool, default: true)
+  track_unknown_space: true
+
+# Only matters if the static layer is not the bottom layer. If true, only the maximum value will be written to the master costmap. (bool, default: false)
+  use_maximum: false
+
+# If true, translates all map message values to NO_INFORMATION/FREE_SPACE/LETHAL_OBSTACLE (three values). If false, a full spectrum of intermediate values is possible. (bool, default: true)
+  trinary_costmap: true
+
+#############################
+#
+#        inflation_layer
+#
+#############################
+inflation_layer:
+# The radius in meters to which the map inflates obstacle cost values. (double, default: 0.55)
+  inflation_radius: 0.50
+
+# A scaling factor to apply to cost values during inflation. The cost function is computed as follows for all cells in the costmap further than the inscribed radius distance and closer than the inflation radius distance away from an actual obstacle: exp(-1.0 * cost_scaling_factor * (distance_from_obstacle - inscribed_radius)) * (costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1), where costmap_2d::INSCRIBED_INFLATED_OBSTACLE is currently 254. NOTE: since the cost_scaling_factor is multiplied by a negative in the formula, increasing the factor will decrease the resulting cost values. (double, default: 10.0)
+  cost_scaling_factor: 10.0
+
+#############################
+#
+#      obstacle_layer
+#
+#############################
+obstacle_layer:
+# The maximum height of any obstacle to be inserted into the costmap in meters. This parameter should be set to be slightly higher than the height of your robot. (double, default: 2.0)
+  max_obstacle_height: 2.0
+# The default maximum distance from the robot at which an obstacle will be inserted into the cost map in meters. This can be over-ridden on a per-sensor basis. (double, default: 2.5)
+  obstacle_range: 3.0
+# The default range in meters at which to raytrace out obstacles from the map using sensor data. This can be over-ridden on a per-sensor basis. (double, default: 3.0)
+  raytrace_range: 4.0
+# If false, each pixel has one of 2 states: lethal obstacle or free. If true, each pixel has one of 3 states: lethal obstacle, free, or unknown.  (bool, default: false)
+  track_unknown_space: false
+# If true, the robot footprint will clear (mark as free) the space in which it travels. (bool, default: true)
+  footprint_clearing_enabled: true
+# A list of observation source names separated by spaces. This defines each of the <source_name> namespaces defined below. (string, default: "")
+  observation_sources: scan
+  
+  scan:
+# The topic on which sensor data comes in for this source. Defaults to the name of the source. (string, default: source_name)
+    topic: scan
+# The frame of the origin of the sensor. Leave empty to attempt to read the frame from sensor data. The frame can be read from both sensor_msgs/LaserScan, sensor_msgs/PointCloud, and sensor_msgs/PointCloud2 messages. (string, default: "")
+    sensor_frame: ""
+# How long to keep each sensor reading in seconds. A value of 0.0 will only keep the most recent reading. (double, default: 0.0)
+    observation_persistence: 0.0
+# How often to expect a reading from a sensor in seconds. A value of 0.0 will allow infinite time between readings. This parameter is used as a failsafe to keep the navigation stack from commanding the robot when a sensor has failed. It should be set to a value that is slightly more permissive than the actual rate of the sensor. For example, if we expect a scan from a laser every 0.05 seconds we might set this parameter to be 0.1 seconds to give a generous buffer and account for some amount of system latency. (double, default: 0.0)
+    expected_update_rate: 0.0
+# The data type associated with the topic, right now only "PointCloud", "PointCloud2", and "LaserScan" are supported. (string, default: "PointCloud")
+    data_type: LaserScan
+# Whether or not this observation should be used to clear out freespace.  (bool, default: false)
+    clearing: true
+# Whether or not this observation should be used to mark obstacles. (bool, default: true)
+    marking: true
+# The maximum height in meters of a sensor reading considered valid. This is usually set to be slightly higher than the height of the robot. Setting this parameter to a value greater than the global max_obstacle_height parameter has no effect. Setting this parameter to a value less than the global max_obstacle_height will filter out points from this sensor above that height.(double, default: 2.0)
+    max_obstacle_height: 2.0
+# The minimum height in meters of a sensor reading considered valid. This is usually set to be at ground height, but can be set higher or lower based on the noise model of your sensor. (double, default: 0.0)
+    min_obstacle_height: 0.0
+# The maximum range in meters at which to insert obstacles into the costmap using sensor data.  (double, default: 2.5)
+    obstacle_range: 3.0
+# The maximum range in meters at which to raytrace out obstacles from the map using sensor data.  (double, default: 3.0)
+    raytrace_range: 4.0
+# Allows for Inf values in "LaserScan" observation messages. The Inf values are converted to the laser maximum range.  (bool, default: false)
+    inf_is_valid: true
+

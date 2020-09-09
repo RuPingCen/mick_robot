@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="rviz" default="true"/>
+
+  <!-- Gmapping -->
+  <include file="$(find mick_navigation)/launch/include/gmapping.launch.xml" />
+  
+ <!-- RViz -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/gmapping.rviz" />
+
+
+</launch>

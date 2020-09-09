@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mick_robot)
+project(mick_bringup)
 
 find_package(OpenCV REQUIRED)
 find_package(OpenMP)
-find_package(PCL REQUIRED)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -130,20 +129,19 @@ catkin_package(
 include_directories(
 	${catkin_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
-<<<<<<< HEAD
-=======
-	${PCL_INCLUDE_DIRS}
-	${kinect2_bridge_INCLUDE_DIRS}
->>>>>>> a20d9b8bdbc646e69996b00aa9f620e88a91e92c
 )
 
-add_executable(mick_robot src/mick_robot.cpp)
+add_executable(mick_bringup src/mick_bringup.cpp)
 
-target_link_libraries(mick_robot
+target_link_libraries(mick_bringup
 	${catkin_LIBRARIES}
 	${OpenCV_LIBRARIES}
 )
-
+add_executable(mickx4_bringup src/mickx4_bringup.cpp)
+target_link_libraries(mickx4_bringup
+	${catkin_LIBRARIES}
+	${OpenCV_LIBRARIES}
+)
 ## Declare a C++ library
 # add_library(save_imagefrom_kinect2
 #   src/${PROJECT_NAME}/save_imagefrom_kinect2.cpp
@@ -181,7 +179,7 @@ target_link_libraries(mick_robot
 # )
 
 ## Mark executables and/or libraries for installation
- install(TARGETS mick_robot
+ install(TARGETS mick_bringup
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

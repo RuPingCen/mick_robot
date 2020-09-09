@@ -1,0 +1,20 @@
+<launch>
+
+  <param name="sub_cmdvel_topic" value="/cmd_vel" type="str" />
+  <param name="pub_odom_topic" value="/odom" type="str" />
+  <param name="dev" value="/dev/mick" type="str" />
+  <param name="buad" value="115200" type="int" />
+  <param name="time_out" value="1000" type="int" />
+  <param name="hz" value="100" type="int" />
+
+  <node pkg="mick_bringup" type="mick_bringup" name="mick_bringup" output="screen">
+ 	
+  </node>
+
+  <!-- RplidarA3 -->
+  <include file="$(find rplidar_ros)/launch/rplidar_a3.launch" />
+
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.0 0 0.5 -3.1415926 0 0 base_link laser 50" />
+
+
+</launch>
