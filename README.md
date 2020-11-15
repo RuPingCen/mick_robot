@@ -34,4 +34,17 @@ mick_navigation: move—base导航配置文件
    
    catkin_make
 ```
+# 运行
+
+1、差速底盘 
+
+ ```
+roslaunch mick_bringup mickm4_bringup.launch
+```
+
+2、麦克纳姆轮的底盘 
+
+ ```
+roslaunch mick_bringup mickx4_bringup.launch
+```
 
