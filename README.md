@@ -1,4 +1,5 @@
 # mick_robot
+
 该代码为麦克纳姆轮和四轮差速ROS底盘的ROS节点，与mick_robot_chasiss代码配合使用，更多的信息可以参考博客地址：https://blog.csdn.net/crp997576280/article/details/102026459
 
 mick_bringup : 为麦克纳姆轮和四轮差速ROS底盘的ROS节点
@@ -6,6 +7,16 @@ mick_bringup : 为麦克纳姆轮和四轮差速ROS底盘的ROS节点
 mick_description :存放模型文件和URDF文件
 
 mick_navigation: move—base导航配置文件
+
+[开源自主导航小车MickX4（一）ROS底盘硬件](https://blog.csdn.net/crp997576280/article/details/108290182)
+[开源自主导航小车MickX4（二）ROS底盘运动控制](https://blog.csdn.net/crp997576280/article/details/108475154)
+[开源自主导航小车MickX4（三）底盘ROS节点](https://blog.csdn.net/crp997576280/article/details/108567732)
+开源自主导航小车MickX4（四）底盘URDF模型
+开源自主导航小车MickX4（五）gmapping建图
+开源自主导航小车MickX4（六）cartography 建图
+开源自主导航小车MickX4（七）小车室外导航
+开源自主导航小车MickX4（八）总结与展望
+
 
 ### V1.1 修改日志
   １．修改了ROS serial库参数，使得串口读取数据帧更加稳定
