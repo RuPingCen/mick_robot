@@ -24,7 +24,8 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <std_msgs/String.h>
-
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 #include<tf/transform_broadcaster.h>
 #include<nav_msgs/Odometry.h>
 #include<geometry_msgs/Twist.h>
@@ -71,12 +72,22 @@ typedef struct{
 		uint32_t counter;
 }moto_measure_t;
 typedef struct{
- 		uint32_t counter;
-		uint16_t 	ax,ay,az;		 
- 		uint16_t 	gx,gy,gz;	
- 		uint16_t 	mx,my,mz;	
-		float pitch,roll,yaw;
-		float pitch_rad,roll_rad,yaw_rad;
+	uint32_t counter;
+	uint16_t 	ax,ay,az;		 
+	uint16_t 	gx,gy,gz;	
+	uint16_t 	mx,my,mz;	
+	float pitch,roll,yaw;
+	float pitch_rad,roll_rad,yaw_rad;
+	float temp;
+	float qw,qx,qy,qz;
+	
+	uint8_t IMUFlag;
+	uint8_t GPSFlag;	
+
+	uint32_t press,high;
+	double GPSLon,GPSLat;
+	double GPSHeight,GPSYaw,GPSV;
+	double GPSSN,GPSPDOP,GPSHDOP,GPSVDOP;
 		
 }imu_measure_t;
 
@@ -97,6 +108,7 @@ union IntData //union的作用为实现char数组和int16数据类型之间的�
     unsigned char byte_data[2];
 }speed_rpm,imu;
 
+ros::Publisher imu_pub, mag_pub;
  
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
@@ -105,6 +117,7 @@ void clear_odometry_chassis(void);
 bool analy_uart_recive_data( std_msgs::String serial_data);
 void calculate_position_for_odometry(void);
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
+void publish_imu_mag(void);
 
 int main(int argc,char** argv)
 {
@@ -140,11 +153,13 @@ int main(int argc,char** argv)
 	ROS_INFO_STREAM("hz:   "<<hz);
 	 
 	
-	 //订阅主题command
-	 ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
-	 //发布主题sensor
-	   // ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
-        odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	//订阅主题command
+	ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
+	//发布主题sensor
+	// ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
+	odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	imu_pub = n.advertise<sensor_msgs::Imu>("/imu", 1);
+	mag_pub = n.advertise<sensor_msgs::MagneticField>("/mag", 1);
 	// 开启串口模块
 	 try
 	 {
@@ -174,12 +189,12 @@ int main(int argc,char** argv)
 	    return -1;
 	}
  
-  ros::Rate loop_rate(hz);
- 
- clear_odometry_chassis();
- bool init_OK=false;
-while(!init_OK)	
-{
+	ros::Rate loop_rate(hz);
+
+	clear_odometry_chassis();
+	bool init_OK=false;
+	while(!init_OK)	
+	{
 		clear_odometry_chassis();
 		ROS_INFO_STREAM("clear odometry ..... ");
 		if(ros_ser.available())
@@ -196,7 +211,7 @@ while(!init_OK)
 		}
 		ros::spinOnce();
 		loop_rate.sleep();
-}
+	}
  ROS_INFO_STREAM("clear odometry successful !");
    
     while(ros::ok())
@@ -258,82 +273,77 @@ while(!init_OK)
 }
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-//ROS_INFO_STREAM("Write to serial port" << msg->data);
- // ostringstream os;
-  float speed_x,speed_y,speed_w;
-  float v1=0,v2=0,v3=0,v4=0;
-  // os<<"speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z<<'\n';
- //cout<<os.str()<<endl;
-//send_speed_to_chassis(msg->linear.x*10,msg->linear.y*10,msg->angular.z*2);
+	//ROS_INFO_STREAM("Write to serial port" << msg->data);
 
-  
-  speed_x = msg->linear.x;
-  speed_y = 0;
-  speed_w = msg->angular.z;
-  
-//   v1 =speed_x-speed_y-WHEEL_K*speed_w;       //转化为每个轮子的线速度
-//   v2 =speed_x+speed_y-WHEEL_K*speed_w;
-//   v3 =-(speed_x-speed_y+WHEEL_K*speed_w);
-//   v4 =-(speed_x+speed_y+WHEEL_K*speed_w);
+	float speed_x,speed_y,speed_w;
+	float v1=0,v2=0,v3=0,v4=0;
 
-    v1 =speed_x-0.5*WHEEL_L*speed_w;   //左边    //转化为每个轮子的线速度
-   v2 =v1;
-   v4 =-(speed_x+0.5*WHEEL_L*speed_w);
-   v3 =v4;
-  
-  v1 =v1/(2.0*WHEEL_R*WHEEL_PI);    //转换为轮子的速度　RPM
-  v2 =v2/(2.0*WHEEL_R*WHEEL_PI);
-  v3 =v3/(2.0*WHEEL_R*WHEEL_PI);
-  v4 =v4/(2.0*WHEEL_R*WHEEL_PI);
-  
-   v1 =v1*WHEEL_RATIO*60;    //转每秒转换到RPM
-  v2 =v2*WHEEL_RATIO*60;
-  v3 =v3*WHEEL_RATIO*60;
-  v4 =v4*WHEEL_RATIO*60;
-  
-  
-  send_rpm_to_chassis(v1,v2,v3,v4);	 
- //send_rpm_to_chassis(200,200,200,200);	
-  ROS_INFO_STREAM("v1: "<<v1<<"      v2: "<<v2<<"      v3: "<<v3<<"      v4: "<<v4);
-  ROS_INFO_STREAM("speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z);
+	speed_x = msg->linear.x;
+	speed_y = 0;
+	speed_w = msg->angular.z;
+
+	//v1 =speed_x-speed_y-WHEEL_K*speed_w;       //转化为每个轮子的线速度
+	//v2 =speed_x+speed_y-WHEEL_K*speed_w;
+	//v3 =-(speed_x-speed_y+WHEEL_K*speed_w);
+	//v4 =-(speed_x+speed_y+WHEEL_K*speed_w);
+
+	v1 =speed_x-0.5*WHEEL_L*speed_w;   //左边    //转化为每个轮子的线速度
+	v2 =v1;
+	v4 =-(speed_x+0.5*WHEEL_L*speed_w);
+	v3 =v4;
+
+	v1 =v1/(2.0*WHEEL_R*WHEEL_PI);    //转换为轮子的速度　RPM
+	v2 =v2/(2.0*WHEEL_R*WHEEL_PI);
+	v3 =v3/(2.0*WHEEL_R*WHEEL_PI);
+	v4 =v4/(2.0*WHEEL_R*WHEEL_PI);
+
+	v1 =v1*WHEEL_RATIO*60;    //转每秒转换到RPM
+	v2 =v2*WHEEL_RATIO*60;
+	v3 =v3*WHEEL_RATIO*60;
+	v4 =v4*WHEEL_RATIO*60;
+
+	send_rpm_to_chassis(v1,v2,v3,v4);	 
+	//send_rpm_to_chassis(200,200,200,200);	
+	ROS_INFO_STREAM("v1: "<<v1<<"      v2: "<<v2<<"      v3: "<<v3<<"      v4: "<<v4);
+	ROS_INFO_STREAM("speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z);
 }
 
 void send_speed_to_chassis(float x,float y,float w)
 {
-  uint8_t data_tem[50];
-  unsigned int speed_0ffset=10; //速度偏移值 10ｍ/s，把速度转换成正数发送
-  unsigned char i,counter=0;
-  unsigned char  cmd,length;
-  unsigned int check=0;
- cmd =0xF3; //针对MickX4的小车使用F3 字段      针对MickM4的小车使用F2
-  data_tem[counter++] =0xAE;
-  data_tem[counter++] =0xEA;
-  data_tem[counter++] =0x0B;
-  data_tem[counter++] =cmd;
-  
-  data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
-  data_tem[counter++] =((x+speed_0ffset)*100);
-  
-  data_tem[counter++] =((y+speed_0ffset)*100)/256; // X
-  data_tem[counter++] =((y+speed_0ffset)*100);
-  
-  data_tem[counter++] =((w+speed_0ffset)*100)/256; // X
-  data_tem[counter++] =((w+speed_0ffset)*100);
-  
-  data_tem[counter++] =0x00;
-  data_tem[counter++] =0x00;
-  
- 
-  for(i=0;i<counter;i++)
-  {
-    check+=data_tem[i];
-  }
-  data_tem[counter++] =0xff;
-   data_tem[2] =counter-2;
-  data_tem[counter++] =0xEF;
-  data_tem[counter++] =0xFE;
- 
-  ros_ser.write(data_tem,counter);
+	uint8_t data_tem[50];
+	unsigned int speed_0ffset=10; //速度偏移值 10ｍ/s，把速度转换成正数发送
+	unsigned char i,counter=0;
+	unsigned char  cmd,length;
+	unsigned int check=0;
+	cmd =0xF3; //针对MickX4的小车使用F3 字段      针对MickM4的小车使用F2
+	data_tem[counter++] =0xAE;
+	data_tem[counter++] =0xEA;
+	data_tem[counter++] =0x0B;
+	data_tem[counter++] =cmd;
+
+	data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
+	data_tem[counter++] =((x+speed_0ffset)*100);
+
+	data_tem[counter++] =((y+speed_0ffset)*100)/256; // X
+	data_tem[counter++] =((y+speed_0ffset)*100);
+
+	data_tem[counter++] =((w+speed_0ffset)*100)/256; // X
+	data_tem[counter++] =((w+speed_0ffset)*100);
+
+	data_tem[counter++] =0x00;
+	data_tem[counter++] =0x00;
+
+
+	for(i=0;i<counter;i++)
+	{
+	check+=data_tem[i];
+	}
+	data_tem[counter++] =0xff;
+	data_tem[2] =counter-2;
+	data_tem[counter++] =0xEF;
+	data_tem[counter++] =0xFE;
+
+	ros_ser.write(data_tem,counter);
 }
  
 /**
@@ -343,7 +353,7 @@ void send_speed_to_chassis(float x,float y,float w)
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 {
   uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速偏移１００００转
+  unsigned int speed_0ffset=10000; //转速偏移10000转
 
   unsigned char i,counter=0;
   unsigned char  cmd;
@@ -386,7 +396,7 @@ void clear_odometry_chassis(void)
   unsigned char i,counter=0;
   unsigned char  cmd,resave=0x00;
   unsigned int check=0;
- cmd =0xE1;
+  cmd =0xE1;
   data_tem[counter++] =0xAE;
   data_tem[counter++] =0xEA;
   data_tem[counter++] =0x0B;
@@ -607,7 +617,7 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
  */
 float s1=0,s2=0,s3=0,s4=0;
 float s1_last=0,s2_last=0,s3_last=0,s4_last=0;
- float position_x=0,position_y=0,position_w=0;
+float position_x=0,position_y=0,position_w=0;
 void calculate_position_for_odometry(void)
  {
   //方法１：　　计算每个轮子转动的位移，然后利用Ｆ矩阵合成Ｘ,Y,W三个方向的位移
@@ -743,3 +753,50 @@ void publish_odomtery(float  position_x,float position_y,float oriention,float v
             odom_pub.publish(odom);
 }
  
+void publish_imu_mag(void)
+{
+	static sensor_msgs::Imu imu_msg;
+	static sensor_msgs::MagneticField mag_msg;
+
+	imu_msg.header.stamp = ros::Time::now();
+	imu_msg.header.frame_id = "/imu";
+
+	// Eigen::Vector3d ea0(wit_imu.roll * M_PI / 180.0,
+	// 	  wit_imu.pitch * M_PI / 180.0,
+	// 	  wit_imu.yaw * M_PI / 180.0);
+	// Eigen::Matrix3d R;
+	// R = Eigen::AngleAxisd(ea0[0], ::Eigen::Vector3d::UnitZ())
+	// 	* Eigen::AngleAxisd(ea0[1], ::Eigen::Vector3d::UnitY())
+	// 	* Eigen::AngleAxisd(ea0[2], ::Eigen::Vector3d::UnitX());
+
+	// Eigen::Quaterniond q;
+	// q = R;
+	// q.normalize();
+
+	// imu_msg.orientation.w = (double)q.w();
+	// imu_msg.orientation.x = (double)q.x();
+	// imu_msg.orientation.y = (double)q.y();
+	// imu_msg.orientation.z = (double)q.z();
+
+	imu_msg.orientation.w = imu_chassis.qw;
+	imu_msg.orientation.x = imu_chassis.qx;
+	imu_msg.orientation.y = imu_chassis.qy;
+	imu_msg.orientation.z = imu_chassis.qz;
+
+	// change to rad/s       0.0010652 = 2000/32768/57.3
+	imu_msg.angular_velocity.x = imu_chassis.gx*0.0010652; 
+	imu_msg.angular_velocity.y = imu_chassis.gy*0.0010652;
+	imu_msg.angular_velocity.z = imu_chassis.gz*0.0010652;
+
+	imu_msg.linear_acceleration.x = imu_chassis.ax/32768.0f*4;
+	imu_msg.linear_acceleration.y = imu_chassis.ay/32768.0f*4;
+	imu_msg.linear_acceleration.z = imu_chassis.az/32768.0f*4;
+	imu_pub.publish(imu_msg);
+
+	mag_msg.magnetic_field.x = imu_chassis.mx;
+	mag_msg.magnetic_field.y = imu_chassis.my;
+	mag_msg.magnetic_field.z = imu_chassis.mz;
+	mag_msg.header.stamp = imu_msg.header.stamp;
+	mag_msg.header.frame_id = imu_msg.header.frame_id;
+	mag_pub.publish(mag_msg);
+}
