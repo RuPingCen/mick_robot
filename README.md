@@ -16,13 +16,14 @@ mick_navigation: move—base导航配置文件
   
   ４．增加了参数传递功能，可通过launch文件传递参数
   
-### Ｖ1.0 修改日志
+### v1.0 修改日志
   第一次提交
   
 # 1、下载安装
  1.安装依赖项
 ```
-    sudo apt-get install ros-kinetic-serial
+    sudo apt-get install ros-kinetic-serial ros-kinetic-amcl ros-kinetic-map-server ros-kinetic-gmapping ros-kinetic-move-base
+    
 ```
   
  2. 下载&编译
