@@ -21,14 +21,15 @@
 
 #include <ros/ros.h>
 #include <ros/spinner.h>
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/Image.h>
+ 
 #include <std_msgs/String.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
-#include<tf/transform_broadcaster.h>
 #include<nav_msgs/Odometry.h>
 #include<geometry_msgs/Twist.h>
+
+#include <tf/tf.h>
+#include<tf/transform_broadcaster.h>
 
 #include <serial/serial.h>
 #include <std_msgs/String.h>
@@ -49,12 +50,6 @@ float WHEEL_L=0.680;                 //左右轮子的间距
 float WHEEL_D=0.254; 		    	//轮子直径  10寸的轮子
 float WHEEL_R=WHEEL_D/2.0; 			//轮子半径
 float WHEEL_PI=3.141693; 			//pi
-
-struct timeval time_val; //time varible
-struct timezone tz;
-double time_stamp;
-serial::Serial ros_ser;
-ros::Publisher odom_pub;
 
 typedef struct{
 		uint16_t 	angle;				//abs angle range:[0,8191] 电机转角绝对值
@@ -90,13 +85,7 @@ typedef struct{
 	double GPSSN,GPSPDOP,GPSHDOP,GPSVDOP;
 		
 }imu_measure_t;
-
-
-moto_measure_t moto_chassis[4] = {0};
-imu_measure_t imu_chassis;  //IMU 数据
-//uint16_t Ultrasonic_data [10];   //超声波数据
-vector<uint16_t> Ultrasonic_data(10,0);
-
+ 
 union floatData //union的作用为实现char数组和float之间的转换
 {
     int32_t int32_dat;
@@ -108,8 +97,20 @@ union IntData //union的作用为实现char数组和int16数据类型之间的�
     unsigned char byte_data[2];
 }speed_rpm,imu;
 
-ros::Publisher imu_pub, mag_pub;
- 
+
+struct timeval time_val; //time varible
+struct timezone tz;
+double time_stamp;
+
+moto_measure_t moto_chassis[4] = {0};
+imu_measure_t imu_chassis;  //IMU 数据
+vector<uint16_t> Ultrasonic_data(12,0);
+
+serial::Serial ros_ser;
+ros::Publisher odom_pub, imu_pub, mag_pub;
+tf::TransformBroadcaster broadcaster;
+
+
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
@@ -792,6 +793,10 @@ void publish_imu_mag(void)
 	imu_msg.linear_acceleration.y = imu_chassis.ay/32768.0f*4;
 	imu_msg.linear_acceleration.z = imu_chassis.az/32768.0f*4;
 	imu_pub.publish(imu_msg);
+
+    broadcaster.sendTransform(tf::StampedTransform(
+        tf::Transform(tf::Quaternion(imu_chassis.qx,imu_chassis.qy, imu_chassis.qz,
+		 imu_chassis.qw),tf::Vector3(0, 0, 0)),ros::Time::now(),"world", "imu"));
 
 	mag_msg.magnetic_field.x = imu_chassis.mx;
 	mag_msg.magnetic_field.y = imu_chassis.my;
