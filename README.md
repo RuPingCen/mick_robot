@@ -2,7 +2,7 @@
 
 该代码为麦克纳姆轮和四轮差速ROS底盘的ROS导航节点包，与 mick_robot_chasiss 代码配合使用，更多的信息可以参考[博客-熊猫飞天](https://blog.csdn.net/crp997576280)
 
-项目对应的中文教程：
+该开源项目使用四轮差速小车模型和16线的3D激光雷达作为传感器，导航框架是基于move_base进行修改的。项目对应的中文教程：
 
 [开源自主导航小车MickX4（一）ROS底盘硬件](https://blog.csdn.net/crp997576280/article/details/108290182)
 
