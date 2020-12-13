@@ -1,0 +1,9 @@
+<library path="lib/libcloud_nodelet">
+  <class name="rslidar_pointcloud/CloudNodelet"
+         type="rslidar_pointcloud::CloudNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Aggregates points from multiple packets, publishing PointCloud2.
+    </description>
+  </class>
+</library>
