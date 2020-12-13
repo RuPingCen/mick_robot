@@ -1,0 +1,259 @@
+<?xml version="1.0"?>
+<robot name="smartcar">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.66 .54 .1"/>
+    </geometry>
+    <origin rpy="0 0 0" xyz="0 0 0.0"/>
+    <material name="gree">
+        <color rgba="0 0 .8 1"/>
+    </material>
+    </visual>
+ </link>
+
+ <link name="left_front_wheel">
+    <visual>
+      <geometry>
+	<cylinder length=".06" radius="0.125"/>
+        <!-- mesh filename="package://mick_description/urdf/mesh/wheel.stp" /-->
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="left_front_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="left_front_wheel"/>
+    <origin rpy="1.57075 0 0" xyz="0.22 0.31 0"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+ <link name="right_front_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".06" radius="0.125"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="right_front_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="right_front_wheel"/>
+    <origin rpy="1.57075 0 0" xyz="0.22 -0.31 0"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+  <link name="right_back_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".06" radius="0.125"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="right_back_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="right_back_wheel"/>
+    <origin rpy="1.57075 0 0" xyz="-0.22 -0.31 0"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+ </joint>
+
+  <link name="left_back_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".06" radius="0.125"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="left_back_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="left_back_wheel"/>
+    <origin rpy="1.57075 0 0" xyz="-0.22 0.31 0"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+  <link name="camera">
+     <visual>
+      <geometry>
+	 <box size=".03 .15 .03"/>
+        <!--mesh filename="package://mick_description/urdf/mesh/ZED2.stl"/-->
+        <!--mesh>
+	    <uri>model://mick_description/urdf/mesh/ZED2.stl</uri>
+	    <scale> 0.001 0.001 0.001 </scale>
+        </mesh-->
+      </geometry>
+      <material name="">
+        <color rgba="0 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="camera" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera"/>
+    <origin xyz="0.17 0.0 0.62"/>
+  </joint>
+
+
+  <link name="laser">
+     <visual>
+      <geometry>
+         <cylinder length=".0826" radius="0.0487"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser"/>
+    <origin xyz="0.0 0.0 0.66"/>
+  </joint>
+
+
+
+
+
+  <link name="part1">
+    <visual>
+      <geometry>
+        <box size=".02 .02 .54"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part1_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part1"/>
+    <origin xyz="0.17 0.17 0.32"/>
+  </joint>
+
+  <link name="part2">
+    <visual>
+      <geometry>
+        <box size=".02 .02 .54"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part2_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part2"/>
+    <origin xyz="0.17 -0.17 0.32"/>
+  </joint>
+
+  <link name="part3">
+    <visual>
+      <geometry>
+        <box size=".02 .02 .54"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part3_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part3"/>
+    <origin xyz="-0.17 -0.17 0.32"/>
+  </joint>
+
+  <link name="part4">
+    <visual>
+      <geometry>
+        <box size=".02 .02 .54"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part4_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part4"/>
+    <origin xyz="-0.17 0.17 0.32"/>
+  </joint>
+
+ 
+  <link name="part5">
+    <visual>
+      <geometry>
+        <box size=".35 .35 .02"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part5_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part5"/>
+    <origin xyz="0 0 0.59"/>
+  </joint>
+
+  <link name="part6">
+    <visual>
+      <geometry>
+        <box size=".35 .35 .02"/>
+      </geometry>
+      <material name="white">
+          <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="part6_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part6"/>
+    <origin xyz="0 0 0.30"/>
+  </joint>
+
+  <!-- LED screen -->
+  <link name="part7">
+    <visual>
+      <geometry>
+        <box size=".02 .30 .20"/>
+      </geometry>
+      <material name="">
+          <color rgba="0.5 0.45 0 1"/>
+      </material>
+    </visual>
+  </link>
+  
+  <joint name="part7_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="part7"/>
+    <origin rpy= "0 0.4 0" xyz="-0.22 0 0.50"/>
+  </joint>
+</robot>

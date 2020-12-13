@@ -1,0 +1,32 @@
+ <robot name="autolabor"> 
+    <link name="base_link">
+    <inertial>
+      <origin
+        xyz="0. 0. 0."
+        rpy="0. 0. 0." />
+      <mass
+        value="0.251988675650349" />
+      <inertia
+        ixx="0.000595579869264794"
+        ixy="5.99238175321912E-08"
+        ixz="-1.98242615307314E-08"
+        iyy="0.00102462329604677"
+        iyz="-1.73115625503396E-05"
+        izz="0.00060561972360446" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0. 0. 0.05"
+        rpy="1.57 0. 1.57" />
+      <geometry>
+        <mesh
+          filename="package://mick_description/urdf/mesh/autolabor.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+   </link>
+</robot>

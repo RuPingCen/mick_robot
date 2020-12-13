@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>  
+  <arg name="model" /> 
+  <arg name="gui" default="false" />
+  <arg name="rvizconfig" default="$(find mick_description)/rviz/view_modle.rviz" /> 
+ 
+  <param name="robot_description" textfile="$(find mick_description)/urdf/mickX4.urdf" />
+  <!-- param name="robot_description" command="$(find xacro)/xacro.py $(find mick_description)/urdf/p3at.urdf.xacro" /-->  
+  <param name="use_gui" value="$(arg gui)"/>  
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /> 
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" /> 
+ 
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />  
+
+</launch> 

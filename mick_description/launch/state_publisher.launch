@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<arg name="gui" default="False" />
+	<param name="use_gui" value="$(arg gui)"/> 
+	<!-- Load URDF file -->
+	<param name="robot_description" textfile="$(find mick_description)/urdf/mickX4.urdf" />
+
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+	</node>  
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+		<param name="publish_frequency" type="double" value="30.0" />
+	</node>
+</launch>

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rplidar_a2" description="rplidar a2 or a3">
+  <xacro:property name="PI" value="3.1415926535897931" />
+  <xacro:property name="prefix" value="lidar_" />
+  <xacro:property name="frame_name" value="laser" />
+
+  <xacro:macro name="rplidar_a2" params="parent *origin">
+    <joint name="${prefix}base_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${prefix}base_link"/>
+    </joint>
+    <link name="${prefix}base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://p3at_description/urdf/mesh/rplidar_a2.stl" />
+        </geometry>
+        <material name="">
+          <color rgba="0.2 0.2 0.2 3" />
+        </material>
+      </visual>
+    </link>
+
+    <!---->
+    <joint name="${frame_name}_joint" type="fixed">
+      <origin xyz="0.0 0.0 0.030" rpy="0.0 0.0 0.0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${frame_name}"/>
+    </joint>
+    <link name="${frame_name}"/>
+
+  </xacro:macro>
+
+</robot>
