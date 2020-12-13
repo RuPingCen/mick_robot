@@ -8,7 +8,7 @@
 
 [开源自主导航小车MickX4（三）底盘ROS节点](https://blog.csdn.net/crp997576280/article/details/108567732)
 
-开源自主导航小车MickX4（四）底盘URDF模型
+[开源自主导航小车MickX4（四）底盘URDF模型](https://blog.csdn.net/crp997576280/article/details/109685109)
 
 开源自主导航小车MickX4（五）gmapping建图
 
