@@ -1,6 +1,8 @@
 # mick_robot
 
-该代码为麦克纳姆轮和四轮差速ROS底盘的ROS节点，与mick_robot_chasiss代码配合使用，更多的信息可以参考博客地址：https://blog.csdn.net/crp997576280/article/details/102026459
+该代码为麦克纳姆轮和四轮差速ROS底盘的ROS导航节点包，与 mick_robot_chasiss 代码配合使用，更多的信息可以参考[博客-熊猫飞天](https://blog.csdn.net/crp997576280)
+
+项目对应的中文教程：
 
 [开源自主导航小车MickX4（一）ROS底盘硬件](https://blog.csdn.net/crp997576280/article/details/108290182)
 
@@ -44,7 +46,6 @@ mick_navigation: move—base导航配置文件
  1.安装依赖项
 ```
     sudo apt-get install ros-kinetic-serial ros-kinetic-amcl ros-kinetic-map-server ros-kinetic-gmapping ros-kinetic-move-base
-    
 ```
   
  2. 下载&编译
@@ -60,12 +61,12 @@ mick_navigation: move—base导航配置文件
 1、差速底盘 
 
  ```
-roslaunch mick_bringup mickm4_bringup.launch
+  roslaunch mick_bringup mickm4_bringup.launch
 ```
 
 2、麦克纳姆轮的底盘 
 
  ```
-roslaunch mick_bringup mickx4_bringup.launch
+  roslaunch mick_bringup mickx4_bringup.launch
 ```
 
