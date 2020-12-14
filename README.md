@@ -20,6 +20,7 @@
 
 开源自主导航小车MickX4（八）总结与展望
 
+![MickX4](https://github.com/RuPingCen/mick_robot_chasiss/raw/master/Reference/mickx4.png)
 
 ### V1.1 修改日志
   １．修改了ROS serial库参数，使得串口读取数据帧更加稳定
