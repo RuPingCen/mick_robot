@@ -1,14 +1,13 @@
 <launch>
 
-  <param name="sub_cmdvel_topic" value="/cmd_vel" type="str" />
-  <param name="pub_odom_topic" value="/odom" type="str" />
-  <param name="dev" value="/dev/mick" type="str" />
-  <param name="buad" value="115200" type="int" />
-  <param name="time_out" value="1000" type="int" />
-  <param name="hz" value="100" type="int" />
-
+ 
   <node pkg="mick_bringup" type="mickx4_bringup" name="mickx4_bringup" output="screen">
- 	
+ 	  <param name="sub_cmdvel_topic" value="/cmd_vel" type="str" />
+	  <param name="pub_odom_topic" value="/odom" type="str" />
+	  <param name="dev" value="/dev/mick" type="str" />
+	  <param name="buad" value="115200" type="int" />
+	  <param name="time_out" value="1000" type="int" />
+	  <param name="hz" value="100" type="int" />
   </node>
 
   <!-- RplidarA3 -->

@@ -115,7 +115,7 @@
   </joint>
 
 
-  <link name="laser">
+  <link name="rslidar">
      <visual>
       <geometry>
          <cylinder length=".0826" radius="0.0487"/>
@@ -128,7 +128,7 @@
 
   <joint name="laser_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="laser"/>
+    <child link="rslidar"/>
     <origin xyz="0.0 0.0 0.66"/>
   </joint>
 

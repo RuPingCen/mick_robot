@@ -1,0 +1,15 @@
+<launch>
+
+ 
+  <param name="dev" value="/dev/ttyUSB0" type="str" />
+  <param name="buad" value="115200" type="int" />
+  <param name="time_out" value="1000" type="int" />
+  <param name="hz" value="100" type="int" />
+
+  <node pkg="imu_driver" type="seven_lab" name="seven_lab" output="screen">
+ 	
+  </node>
+
+ 
+
+</launch>

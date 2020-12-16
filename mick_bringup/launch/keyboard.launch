@@ -1,0 +1,9 @@
+<launch>
+
+	<include file= "$(find mick_bringup)/launch/mickx4_bringup.launch"/>
+
+  	<node pkg="teleop_keyboard" type="teleop_keyboard" name="teleop_keyboard" output="screen">
+
+  	</node>
+    
+</launch>

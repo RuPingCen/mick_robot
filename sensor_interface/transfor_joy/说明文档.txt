@@ -1,0 +1,14 @@
+安装摇杆驱动包及依赖项：
+	sudo apt-get install libusb-dev
+	sudo apt-get install ros-kinetic-joy
+
+启动摇杆节点：
+	rosrun joy joy_node
+
+创建接收摇杆数据的包
+	catkin_create_pkg transfor_joy std_msgs roscpp rospy
+
+编写节点文件
+	参考资料：https://blog.csdn.net/weixin_38501796/article/details/82669944
+
+编写launch文件

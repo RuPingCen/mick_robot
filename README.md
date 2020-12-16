@@ -46,8 +46,10 @@ mick_navigation: move—base导航配置文件
 # 1、下载安装
  1.安装依赖项
 ```
-    sudo apt-get install ros-kinetic-serial ros-kinetic-amcl ros-kinetic-map-server ros-kinetic-gmapping ros-kinetic-move-base
+    ./config.sh
+
 ```
+
   
  2. 下载&编译
  ```
@@ -57,12 +59,12 @@ mick_navigation: move—base导航配置文件
    
    catkin_make
 ```
-# 2、运行
+# 2、运行差速底盘 （X4）
 
-1、差速底盘 
+## 2.1 启动键盘控制
 
  ```
-  roslaunch mick_bringup mickm4_bringup.launch
+  roslaunch mick_bringup keyboard.launch
 ```
 
 2、麦克纳姆轮的底盘 

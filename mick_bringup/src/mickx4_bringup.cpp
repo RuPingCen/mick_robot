@@ -18,7 +18,7 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
-
+#include<unistd.h>
 #include <ros/ros.h>
 #include <ros/spinner.h>
  
@@ -106,16 +106,16 @@ moto_measure_t moto_chassis[4] = {0};
 imu_measure_t imu_chassis;  //IMU 数据
 vector<uint16_t> Ultrasonic_data(12,0);
 
+ 
 serial::Serial ros_ser;
 ros::Publisher odom_pub, imu_pub, mag_pub;
-tf::TransformBroadcaster broadcaster;
-
-
+static uint8_t data_raw[500];
+ 
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
 void clear_odometry_chassis(void);
-bool analy_uart_recive_data( std_msgs::String serial_data);
+bool analy_uart_recive_data(uint8_t reviced_tem[], int data_length);
 void calculate_position_for_odometry(void);
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
 void publish_imu_mag(void);
@@ -136,15 +136,17 @@ int main(int argc,char** argv)
  
     string sub_cmdvel_topic,pub_odom_topic,dev;
 	int buad,time_out,hz;
+	int data_length;
+
  	ros::init(argc, argv, "mickx4");
-	 ros::NodeHandle n("~");
+	ros::NodeHandle n("~"); 
 	 
 	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
 	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
 	n.param<std::string>("dev", dev, "/dev/mick");
 	n.param<int>("buad", buad, 115200);
 	n.param<int>("time_out", time_out, 1000);
-	n.param<int>("hz", hz, 100);
+	n.param<int>("hz", hz, 200);
 	
 	ROS_INFO_STREAM("sub_cmdvel_topic:   "<<sub_cmdvel_topic);
 	ROS_INFO_STREAM("pub_odom_topic:   "<<pub_odom_topic);
@@ -164,16 +166,17 @@ int main(int argc,char** argv)
 	// 开启串口模块
 	 try
 	 {
-			 ros_ser.setPort(dev);
-			 ros_ser.setBaudrate(buad);
-			 serial::Timeout to = serial::Timeout::simpleTimeout(1000);
-			 //serial::Timeout to = serial::Timeout(1,time_out,0,time_out,0);
-			 to.inter_byte_timeout=1;
-			 to.read_timeout_constant=5;
-			 to.read_timeout_multiplier=0;
-			 ros_ser.setTimeout(to);
-			 ros_ser.open();
-			 ros_ser.flushInput(); //清空缓冲区数据
+		ros_ser.setPort(dev);
+		ros_ser.setBaudrate(buad);
+		 
+		//serial::Timeout to = serial::Timeout(1,time_out,0,time_out,0);
+		// to.inter_byte_timeout=1;
+		// to.read_timeout_constant=5;
+		// to.read_timeout_multiplier=0;
+		serial::Timeout to = serial::Timeout::simpleTimeout(time_out);
+		ros_ser.setTimeout(to);
+		ros_ser.open();
+		ros_ser.flushInput(); //清空缓冲区数据
 	 }
 	 catch (serial::IOException& e)
 	 {
@@ -208,61 +211,53 @@ int main(int argc,char** argv)
 			// cout<<"Recived "<<serial_data.data.c_str()<<endl;
 			// ROS_INFO_STREAM(serial_data.data.c_str());
 			if(str_tem.find("OK",0) )
-			init_OK =true;
+				init_OK =true;
+			else
+				ros_ser.flushInput(); //清空缓冲区数据
 		}
+		sleep(1);
+	}
+	ROS_INFO_STREAM("clear odometry successful !");
+    ros_ser.flushInput(); //清空缓冲区数据
+    while(ros::ok())
+    {  
+		if(ros_ser.available())
+		{
+			std_msgs::String serial_data;
+			serial_data.data = ros_ser.read(ros_ser.available());
+
+			data_length=serial_data.data.size();
+			if(data_length<1 || data_length>500)
+			{
+				ros_ser.flushInput(); //清空缓冲区数据	
+				ROS_INFO_STREAM("serial data is too short ,  len: " << serial_data.data.size() );
+			}
+			else
+			{
+				for(int i=0;i<data_length;i++)
+				{	
+					data_raw[i] =serial_data.data.at(i);
+				}
+			 
+				uart_recive_flag = analy_uart_recive_data(data_raw, data_length);
+			 
+				if(uart_recive_flag)
+				{
+					uart_recive_flag=0;
+					//calculate_position_for_odometry();
+					//odom_pub.publish(serial_data);//将串口数据发布到主题sensor
+				}
+				else
+				{
+					ros_ser.flushInput(); //清空缓冲区数据
+				}
+				
+			}
+  
+		}	 
 		ros::spinOnce();
 		loop_rate.sleep();
-	}
- ROS_INFO_STREAM("clear odometry successful !");
-   
-    while(ros::ok())
-    { 
-
- //			write(sp, buffer("Hello world", 12));//read and write can't use in same time?
-			
-// 			 std_msgs::String serial_data;
-// 			  std::stringstream ss;
-// 			 int num = read (sp,buffer(buf));//
-// 			 ss<<buf;
-// 			 cout<< num <<"get string "<<ss.str()<<endl;
-// 			 serial_data.data=ss.str();
-// 			 for(int inde_i=0;inde_i<num;inde_i++)
-// 			 {
-// 				 serial_data.data.at(inde_i) =buf[inde_i];
-// 			}
-// 			 analy_uart_recive_data(serial_data);
-// 			gettimeofday(&time_val,&tz);//us
-// 			time_stamp =time_val.tv_sec+ time_val.tv_usec/1000000.0;
-// 			 cout<<"time:" <<  time_stamp<<endl;
-                //使用ＲＯＳ serial 
-             while(ros_ser.available()<35)
-			{
-			  // ROS_INFO_STREAM("wait"); 
-			  sleep(0.001); //延时0.1秒,确保有数据进入
-			}   
-			 if(ros_ser.available() )
-			 {
-			    //ROS_INFO_STREAM("Reading from serial port");
-			    std_msgs::String serial_data;
-			    //获取串口数据
-			    serial_data.data = ros_ser.read(ros_ser.available());
-			   uart_recive_flag = analy_uart_recive_data(serial_data);
-			   if(uart_recive_flag)
-			   {
-				  uart_recive_flag=0;
-			    calculate_position_for_odometry();
-			    // odom_pub.publish(serial_data);//将串口数据发布到主题sensor
-			  }
-			   else
-			   {
-			      //serial_data.data = ros_ser.read(ros_ser.available());
-			    ros_ser.flushInput(); //清空缓冲区数据
-			    //sleep(0.5);            //延时0.1秒,确保有数据进入
-			   }
-			}
-			ros::spinOnce();
-			loop_rate.sleep();
-			
+		
     }
    
     std::cout<<" EXIT ..."<<std::endl;
@@ -337,7 +332,7 @@ void send_speed_to_chassis(float x,float y,float w)
 
 	for(i=0;i<counter;i++)
 	{
-	check+=data_tem[i];
+		check+=data_tem[i];
 	}
 	data_tem[counter++] =0xff;
 	data_tem[2] =counter-2;
@@ -353,79 +348,78 @@ void send_speed_to_chassis(float x,float y,float w)
  */
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 {
-  uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速偏移10000转
+	uint8_t data_tem[50];
+	unsigned int speed_0ffset=10000; //转速偏移10000转
 
-  unsigned char i,counter=0;
-  unsigned char  cmd;
-  unsigned int check=0;
- cmd =0xF1;
-  data_tem[counter++] =0xAE;
-  data_tem[counter++] =0xEA;
-  data_tem[counter++] =0x0B;
-  data_tem[counter++] =cmd;
- 
-  data_tem[counter++] =(w1+speed_0ffset)/256; // 
-  data_tem[counter++] =(w1+speed_0ffset)%256;
-  
-  data_tem[counter++] =(w2+speed_0ffset)/256; // 
-  data_tem[counter++] =(w2+speed_0ffset)%256;
-  
-  data_tem[counter++] =(w3+speed_0ffset)/256; // 
-  data_tem[counter++] =(w3+speed_0ffset)%256;
-  
-  data_tem[counter++] =(w4+speed_0ffset)/256; // 
-  data_tem[counter++] =(w4+speed_0ffset)%256;
- 
-  for(i=0;i<counter;i++)
-  {
-    check+=data_tem[i];
-  }
-  data_tem[counter++] =0xff;
-   data_tem[2] =counter-2;
-  data_tem[counter++] =0xEF;
-  data_tem[counter++] =0xFE;
- 
- ros_ser.write(data_tem,counter);
+	unsigned char i,counter=0;
+	unsigned char  cmd;
+	unsigned int check=0;
+	cmd =0xF1;
+	data_tem[counter++] =0xAE;
+	data_tem[counter++] =0xEA;
+	data_tem[counter++] =0x0B;
+	data_tem[counter++] =cmd;
+
+	data_tem[counter++] =(w1+speed_0ffset)/256; // 
+	data_tem[counter++] =(w1+speed_0ffset)%256;
+
+	data_tem[counter++] =(w2+speed_0ffset)/256; // 
+	data_tem[counter++] =(w2+speed_0ffset)%256;
+
+	data_tem[counter++] =(w3+speed_0ffset)/256; // 
+	data_tem[counter++] =(w3+speed_0ffset)%256;
+
+	data_tem[counter++] =(w4+speed_0ffset)/256; // 
+	data_tem[counter++] =(w4+speed_0ffset)%256;
+
+	for(i=0;i<counter;i++)
+	{
+		check+=data_tem[i];
+	}
+	data_tem[counter++] =0xff;
+	data_tem[2] =counter-2;
+	data_tem[counter++] =0xEF;
+	data_tem[counter++] =0xFE;
+
+	ros_ser.write(data_tem,counter);
 }
  
 
 void clear_odometry_chassis(void)
 {
-   uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速偏移１００００转
-  unsigned char i,counter=0;
-  unsigned char  cmd,resave=0x00;
-  unsigned int check=0;
-  cmd =0xE1;
-  data_tem[counter++] =0xAE;
-  data_tem[counter++] =0xEA;
-  data_tem[counter++] =0x0B;
-  data_tem[counter++] =cmd;
-  
-  data_tem[counter++] =0x01; //  清零里程计
-  data_tem[counter++] =resave;
-  
-  data_tem[counter++] =resave; // 
-  data_tem[counter++] =resave;
-  
-  data_tem[counter++] =resave; // 
-  data_tem[counter++] =resave;
-  
-  data_tem[counter++] =resave; // 
-  data_tem[counter++] =resave;
-  
- 
-  for(i=0;i<counter;i++)
-  {
-    check+=data_tem[i];
-  }
-  data_tem[counter++] =0xff;
-   data_tem[2] =counter-2;
-  data_tem[counter++] =0xEF;
-  data_tem[counter++] =0xFE;
- 
- ros_ser.write(data_tem,counter);
+	uint8_t data_tem[50];
+	unsigned int speed_0ffset=10000; //转速偏移1000转
+	unsigned char i,counter=0;
+	unsigned char  cmd,resave=0x00;
+	unsigned int check=0;
+	cmd =0xE1;
+	data_tem[counter++] =0xAE;
+	data_tem[counter++] =0xEA;
+	data_tem[counter++] =0x0B;
+	data_tem[counter++] =cmd;
+
+	data_tem[counter++] =0x01; //  清零里程计
+	data_tem[counter++] =resave;
+
+	data_tem[counter++] =resave; // 
+	data_tem[counter++] =resave;
+
+	data_tem[counter++] =resave; // 
+	data_tem[counter++] =resave;
+
+	data_tem[counter++] =resave; // 
+	data_tem[counter++] =resave;
+
+	for(i=0;i<counter;i++)
+	{
+		check+=data_tem[i];
+	}
+	data_tem[counter++] =0xff;
+	data_tem[2] =counter-2;
+	data_tem[counter++] =0xEF;
+	data_tem[counter++] =0xFE;
+
+	ros_ser.write(data_tem,counter);
   
 }
  
@@ -433,95 +427,65 @@ void clear_odometry_chassis(void)
  * @function 解析串口发送过来的数据帧
  * 成功则返回true　否则返回false
  */
-bool  analy_uart_recive_data( std_msgs::String serial_data)
+bool  analy_uart_recive_data(uint8_t reviced_tem[], int data_length)
 {
-  unsigned char reviced_tem[500];
-  uint16_t len=0,i=0,j=0;
-  unsigned char check=0;
-  unsigned char tem_last=0,tem_curr=0,rec_flag=0;//定义接收标志位
-  uint16_t header_count=0,step=0; //计数这个数据序列中有多少个帧头
-  len=serial_data.data.size();
-  if(len<1 || len>500)
-  {
-	ROS_INFO_STREAM("serial data is too short ,  len: " << serial_data.data.size() );
-     return false; //数据长度太短　
-   }
-   //ROS_INFO_STREAM("Read: " << serial_data.data.size() );
-
+   
+  uint16_t len=0,i=0;
+  uint8_t flag=0;
+ 
    // 有可能帧头不在第一个数组位置
-  for( i=0;i<len;i++) 
+  for( i=0;i<data_length; ) 
   {
-	 tem_last=  tem_curr;
-	 tem_curr = serial_data.data.at(i);
-	 if(tem_last == 0xAE && tem_curr==0xEA&&rec_flag==0) //在接受的数据串中找到帧头　
-	 {
-		 rec_flag=1;
-		 reviced_tem[j++]=tem_last;
-		 reviced_tem[j++]=tem_curr;
-		 //ROS_INFO_STREAM("found frame head" ); 
-	}
-	else if (rec_flag==1)
-	{
-		reviced_tem[j++]=serial_data.data.at(i);
-		if(tem_last == 0xEF && tem_curr==0xFE)
+	  
+	if(reviced_tem[i] ==0xAE && reviced_tem[1+i] == 0xEA) 
+    { 
+	  	len = reviced_tem[2+i]+4; //第一个帧头的长度
+		 
+		uint8_t sum=0x00;
+		for(int j=2+i;j<len-2+i;j++)
 		{
-			header_count++;
-			rec_flag=2;
+		    sum+=data_raw[j+i];
 		}
-	}
-	else
-		rec_flag=0;
-  }
-  // 检验数据长度和校验码是否正确
-//   if(reviced_tem[len-3] ==check || reviced_tem[len-3]==0xff)
-//     ;
-//   else
-//     return;
-  // 检验接受数据的长度
-  step=0;
-  for(i=0;i<header_count;i++) 
-  {
-	  len = (reviced_tem[2+step] +4 ) ; //第一个帧头的长度
-	  //cout<<"read head :" <<i<< "      len:   "<<len;
-	   if(reviced_tem[0+step] ==0xAE && reviced_tem[1+step] == 0xEA && reviced_tem[len-2+step]==0xEF &&reviced_tem[len-1+step]==0xFE) 
-      {//检查帧头帧尾是否完整
-		  if (reviced_tem[3+step] ==0x01 )
-		  {
-			  //ROS_INFO_STREAM("recived motor  data" ); 
-				i=4;
-				motor_upload_counter.byte_data[3]=reviced_tem[i++];
-				motor_upload_counter.byte_data[2]=reviced_tem[i++];
-				motor_upload_counter.byte_data[1]=reviced_tem[i++];
-				motor_upload_counter.byte_data[0]=reviced_tem[i++];
-				for(int j=0;j<4;j++)
+ 
+		if(reviced_tem[len-2+i]==0xEF && reviced_tem[len-1+i]==0xFE) 
+      	{   
+			if (reviced_tem[3+i] ==0x01 )
+			{
+				//ROS_INFO_STREAM("recived motor  data" ); 
+				uint16_t j=i+4;
+				motor_upload_counter.byte_data[3]=reviced_tem[j++];
+				motor_upload_counter.byte_data[2]=reviced_tem[j++];
+				motor_upload_counter.byte_data[1]=reviced_tem[j++];
+				motor_upload_counter.byte_data[0]=reviced_tem[j++];
+				for(int n =0;n<4;n++)
 				{
 					speed_rpm.int16_dat=0;
 					total_angle.int32_dat =0;
 					round_cnt.int32_dat=0;
 					
-					speed_rpm.byte_data[1] = reviced_tem[i++] ; 
-					speed_rpm.byte_data[0] = reviced_tem[i++] ;
+					speed_rpm.byte_data[1] = reviced_tem[j++] ; 
+					speed_rpm.byte_data[0] = reviced_tem[j++] ;
 
-					total_angle.byte_data[3]=reviced_tem[i++]; 
-					total_angle.byte_data[2]=reviced_tem[i++];
-					total_angle.byte_data[1]=reviced_tem[i++];
-					total_angle.byte_data[0]=reviced_tem[i++];
+					total_angle.byte_data[3]=reviced_tem[j++]; 
+					total_angle.byte_data[2]=reviced_tem[j++];
+					total_angle.byte_data[1]=reviced_tem[j++];
+					total_angle.byte_data[0]=reviced_tem[j++];
 					
-					round_cnt.byte_data[3]=reviced_tem[i++]; 
-					round_cnt.byte_data[2]=reviced_tem[i++];
-					round_cnt.byte_data[1] = reviced_tem[i++] ; 
-					round_cnt.byte_data[0] = reviced_tem[i++] ;
+					round_cnt.byte_data[3]=reviced_tem[j++]; 
+					round_cnt.byte_data[2]=reviced_tem[j++];
+					round_cnt.byte_data[1] = reviced_tem[j++] ; 
+					round_cnt.byte_data[0] = reviced_tem[j++] ;
 
-					moto_chassis[j].angle = reviced_tem[i++] *256; 
-					moto_chassis[j].angle += reviced_tem[i++];
+					moto_chassis[n].angle = reviced_tem[j++] *256; 
+					moto_chassis[n].angle += reviced_tem[j++];
 
-					moto_chassis[j].Temp = reviced_tem[i++]; 
+					moto_chassis[n].Temp = reviced_tem[j++]; 
 
-					moto_chassis[j].round_cnt =  round_cnt.int32_dat;
-					moto_chassis[j].speed_rpm = speed_rpm.int16_dat;
-					moto_chassis[j].total_angle = total_angle.int32_dat;
+					moto_chassis[n].round_cnt =  round_cnt.int32_dat;
+					moto_chassis[n].speed_rpm = speed_rpm.int16_dat;
+					moto_chassis[n].total_angle = total_angle.int32_dat;
 					
-					moto_chassis[j].counter = motor_upload_counter.int32_dat;
+					moto_chassis[n].counter = motor_upload_counter.int32_dat;
 				}
 				// 根据电机安装的位置，第３号和第４号电机方向相反
 				moto_chassis[2].speed_rpm = -moto_chassis[2].speed_rpm ;
@@ -531,84 +495,65 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
 				moto_chassis[3].speed_rpm = -moto_chassis[3].speed_rpm ;
 				moto_chassis[3].total_angle = -moto_chassis[3].total_angle;
 				moto_chassis[3].round_cnt = -moto_chassis[3].round_cnt;
-			   ROS_INFO_STREAM("recived motor data" ); 
-			  // 	for(i=0;i<4;i++)
-				//{
-					// 打印四个电机的转速、转角、温度等信息
-					// ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat);
-					//ROS_INFO_STREAM("ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle
-					//  <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
-				   // ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat ); 
-					//ROS_INFO_STREAM("ｖ : "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle ); 
-					//cout<<"M "<< i <<": " <<motor_upload_counter.int32_dat<<endl;
-					//cout<<"ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle<<endl;
-				//}
-		  }
-		  else if (reviced_tem[3+step] ==0x10 )
-			{
-			     i=4+step;
-				motor_upload_counter.byte_data[3]=reviced_tem[i++];
-				motor_upload_counter.byte_data[2]=reviced_tem[i++];
-				motor_upload_counter.byte_data[1]=reviced_tem[i++];
-				motor_upload_counter.byte_data[0]=reviced_tem[i++];
-			  
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ;imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.ax = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.ay = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.az = imu.int16_dat;
-			  
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ;imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.gx = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.gy = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.gz = imu.int16_dat;
-			  
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.mx = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.my = imu.int16_dat;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.mz = imu.int16_dat;
-			  
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.pitch = imu.int16_dat/100.0f;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.roll = imu.int16_dat/100.0f;
-			  imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-			  imu_chassis.yaw = imu.int16_dat/100.0f;
-			  
-				ROS_INFO_STREAM("recived imu  data" ); 
-			}
-			else if (reviced_tem[3+step] ==0x11 )
-			{
-			       i=4+step;
-				 uint16_t ultra_tem=0;
-				motor_upload_counter.byte_data[3]=reviced_tem[i++];
-				motor_upload_counter.byte_data[2]=reviced_tem[i++];
-				motor_upload_counter.byte_data[1]=reviced_tem[i++];
-				motor_upload_counter.byte_data[0]=reviced_tem[i++];
-				for(int j =0;j<10;j++)
+				//ROS_INFO_STREAM("recived motor data" ); 
+				for(i=0;i<4;i++)
 				{
-				 ultra_tem=reviced_tem[i++]*256; 		ultra_tem = ultra_tem+reviced_tem[i++];
-				 Ultrasonic_data.push_back(ultra_tem);
+					//打印四个电机的转速、转角、温度等信息
+					//ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat<<"  V: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle
+					// <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
+					 
 				}
-				ROS_INFO_STREAM("recived Ulrat  data" ); 
+				calculate_position_for_odometry();
+				flag = 0x01;
+			}
+			else if (reviced_tem[3+i] ==0x10 )
+			{
+				uint16_t j =4+i;
+				uint32_t counter = (reviced_tem[j] <<24|reviced_tem[j+1] <<16|reviced_tem[j+2] <<8|reviced_tem[j+3]);
+				 
+				imu_chassis.ax = (reviced_tem[j+4] <<8|reviced_tem[j+5]);
+				imu_chassis.ay = (reviced_tem[j+6] <<8|reviced_tem[j+7]);
+				imu_chassis.az = (reviced_tem[j+8] <<8|reviced_tem[j+9]);
+
+				imu_chassis.gx = (reviced_tem[j+10] <<8|reviced_tem[j+11]);
+				imu_chassis.gy = (reviced_tem[j+12] <<8|reviced_tem[j+13]);
+				imu_chassis.gz = (reviced_tem[j+14] <<8|reviced_tem[j+15]);
+
+				imu_chassis.mx = (reviced_tem[j+16] <<8|reviced_tem[j+17]);
+				imu_chassis.my = (reviced_tem[j+18] <<8|reviced_tem[j+19]);
+				imu_chassis.mz = (reviced_tem[j+20] <<8|reviced_tem[j+21]);
+
+				 
+				imu_chassis.pitch = (int16_t)(reviced_tem[j+22] <<8|reviced_tem[j+23])/100.0f;
+				imu_chassis.roll = (int16_t)(reviced_tem[j+24] <<8|reviced_tem[j+25])/100.0f;
+				imu_chassis.yaw = (int16_t)(reviced_tem[j+26] <<8|reviced_tem[j+27])/100.0f;
+
+				//ROS_INFO_STREAM("recived imu  data" ); 
+				publish_imu_mag();
+				flag = 0x01;
 			}
 			else
 			{
 				ROS_WARN_STREAM("unrecognize frame" ); 
+				flag = 0x00;
 			}
-			//return  true;
-	  }
-	   else
-      {
-		ROS_WARN_STREAM("frame head is wrong" ); 
-         return  false;	
-      }
-      step+=len; 
+		}
+      	else
+			flag = 0x00;
+		
+	}
+	else 
+		flag = 0x00;   
+	
+	if(flag == 0x01)
+	{
+		i = i+len;
+	}
+	else
+	{
+		i = i+1;
+	}
+   
   }
  return  true;	         
 }
@@ -630,10 +575,10 @@ void calculate_position_for_odometry(void)
 
   if((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (moto_chassis[0].counter ==0))
   {
-		s1 =    (moto_chassis[0].round_cnt+(moto_chassis[0].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-		s2 =    (moto_chassis[1].round_cnt+(moto_chassis[1].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-		s3 =    (moto_chassis[2].round_cnt+(moto_chassis[2].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-		s4 =    (moto_chassis[3].round_cnt+(moto_chassis[3].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+		s1 =(moto_chassis[0].round_cnt+(moto_chassis[0].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+		s2 =(moto_chassis[1].round_cnt+(moto_chassis[1].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+		s3 =(moto_chassis[2].round_cnt+(moto_chassis[2].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+		s4 =(moto_chassis[3].round_cnt+(moto_chassis[3].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
 		
 		s1_last=s1;
 		s2_last=s2;
@@ -648,10 +593,10 @@ void calculate_position_for_odometry(void)
   s4_last=s4;
  
   //轮子转动的圈数乘以　N*２*pi*r
-  s1 =    (moto_chassis[0].round_cnt+(moto_chassis[0].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-  s2 =    (moto_chassis[1].round_cnt+(moto_chassis[1].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-  s3 =    (moto_chassis[2].round_cnt+(moto_chassis[2].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
-  s4 =    (moto_chassis[3].round_cnt+(moto_chassis[3].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+  s1 =(moto_chassis[0].round_cnt+(moto_chassis[0].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+  s2 =(moto_chassis[1].round_cnt+(moto_chassis[1].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+  s3 =(moto_chassis[2].round_cnt+(moto_chassis[2].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
+  s4 =(moto_chassis[3].round_cnt+(moto_chassis[3].total_angle%8192)/8192.0)/WHEEL_RATIO*WHEEL_PI*WHEEL_D ; 
  
   s1_delta=s1-s1_last; //每个轮子位移的增量
   s2_delta=s2-s2_last;
@@ -702,8 +647,8 @@ void calculate_position_for_odometry(void)
   linear_y = 0;
   linear_w = ((0.5*v3+0.5*v4)-(0.5*v1+0.5*v2))/float(WHEEL_L);
   
-  ROS_INFO_STREAM("px:  "<<position_x<<"   py: " <<position_y<<"   pw: " <<position_w*57.3
-  <<"  vx:  "<<linear_x<<"   vy: " <<linear_y<<"   vw: " <<linear_w<<endl);
+  //ROS_INFO_STREAM("px:  "<<position_x<<"   py: " <<position_y<<"   pw: " <<position_w*57.3
+  //<<"  vx:  "<<linear_x<<"   vy: " <<linear_y<<"   vw: " <<linear_w<<endl);
  
     publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
     //方法２;利用轮子的转速来推算
@@ -758,6 +703,7 @@ void publish_imu_mag(void)
 {
 	static sensor_msgs::Imu imu_msg;
 	static sensor_msgs::MagneticField mag_msg;
+	tf::TransformBroadcaster imu_broadcaster;
 
 	imu_msg.header.stamp = ros::Time::now();
 	imu_msg.header.frame_id = "/imu";
@@ -794,9 +740,9 @@ void publish_imu_mag(void)
 	imu_msg.linear_acceleration.z = imu_chassis.az/32768.0f*4;
 	imu_pub.publish(imu_msg);
 
-    broadcaster.sendTransform(tf::StampedTransform(
-        tf::Transform(tf::Quaternion(imu_chassis.qx,imu_chassis.qy, imu_chassis.qz,
-		 imu_chassis.qw),tf::Vector3(0, 0, 0)),ros::Time::now(),"world", "imu"));
+    	imu_broadcaster.sendTransform(tf::StampedTransform(
+        	tf::Transform(tf::Quaternion(imu_chassis.qx,imu_chassis.qy, imu_chassis.qz,
+		 	imu_chassis.qw),tf::Vector3(0, 0, 0)),ros::Time::now(),"world", "imu"));
 
 	mag_msg.magnetic_field.x = imu_chassis.mx;
 	mag_msg.magnetic_field.y = imu_chassis.my;

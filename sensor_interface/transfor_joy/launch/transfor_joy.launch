@@ -1,0 +1,18 @@
+<launch>
+
+  <node pkg="transfor_joy" type="transfor_joy" name="transfor_joy">
+
+  <!-- remap from="/cmd_vel" to="/turtle1/cmd_vel"/-->
+  </node>
+
+  <!-- Joy node -->
+  <node pkg="joy" type="joy_node" name="joy_node">
+
+    <param name="dev" value="/dev/input/js0" type="string "/>
+    <param name="deadzone" value="0.05" type="double"/>    
+    <param name="autorepeat_rate" value="10" type="double"/> 
+
+  </node>
+ 
+
+</launch>
