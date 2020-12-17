@@ -1,7 +1,7 @@
 <launch>
 
  
-  <param name="dev" value="/dev/ttyUSB0" type="str" />
+  <param name="dev" value="/dev/wit_imu" type="str" />
   <param name="buad" value="115200" type="int" />
   <param name="time_out" value="1000" type="int" />
   <param name="hz" value="200" type="int" />

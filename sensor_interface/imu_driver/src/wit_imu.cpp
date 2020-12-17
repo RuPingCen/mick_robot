@@ -287,7 +287,7 @@ for(int kk = 0; kk < data_length - 1; )
 
 		if(sum == data_raw[kk + 10])
 		{
-			ROS_INFO_STREAM("roll: "<<roll*180/32768.0f<<"\t pitch: "<<pitch*180/32768.0f<<"\t yaw: "<<yaw*180/32768.0f);
+			//ROS_INFO_STREAM("roll: "<<roll*180/32768.0f<<"\t pitch: "<<pitch*180/32768.0f<<"\t yaw: "<<yaw*180/32768.0f);
 			wit_imu.roll = roll*180/32768.0f;
 			wit_imu.pitch = pitch*180/32768.0f;
 			wit_imu.yaw = yaw*180/32768.0f;
