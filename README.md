@@ -49,13 +49,15 @@ mick_navigation: move—base导航配置文件
   cd catkin_ws/src
 
   git clone  https://github.com/RuPingCen/mick_robot.git
-
 ```
 1.2 安装依赖项 & 编译
 ```
   cd mick_robot
+  
   ./config.sh
+  
   cd ~/catkin_ws
+  
   catkin_make
 ```
  
