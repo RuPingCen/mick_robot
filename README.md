@@ -43,31 +43,35 @@ mick_description :存放模型文件和URDF文件
 
 mick_navigation: move—base导航配置文件
   
-# 1、下载安装
- 1.安装依赖项
-```
-    ./config.sh
-
-```
-
-  
- 2. 下载&编译
+# 1 下载安装
+ 1.1 下载 
  ```
-   cd catkin_ws/src
-   
-   git clone  https://github.com/RuPingCen/mick_robot.git
-   
-   catkin_make
+  cd catkin_ws/src
+
+  git clone  https://github.com/RuPingCen/mick_robot.git
+
 ```
-# 2、运行差速底盘 （X4）
+1.2 安装依赖项 & 编译
+```
+  cd mick_robot
+  ./config.sh
+  cd ~/catkin_ws
+  catkin_make
+```
+ 
+# 2 运行差速底盘 （X4）
 
 ## 2.1 启动键盘控制
 
  ```
   roslaunch mick_bringup keyboard.launch
 ```
+## 2.2 启动gmapping建图
 
-2、麦克纳姆轮的底盘 
+ ```
+  roslaunch mick_navigation mickx4_gmapping.launch
+```
+# 3 麦克纳姆轮的底盘 
 
  ```
   roslaunch mick_bringup mickx4_bringup.launch
