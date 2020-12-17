@@ -1,0 +1,22 @@
+<launch>
+  <arg name="rviz" default="true"/>
+   <!-- chassis -->
+  <include file="$(find mick_bringup)/launch/mickx4_bringup.launch" />
+
+   <!-- urdf -->
+  <include file="$(find mick_description)/launch/state_publisher.launch" />
+
+   <!-- rslidar -->
+  <include file="$(find rslidar_pointcloud)/launch/rs_lidar_16.launch" />
+ 
+   <!-- pointcloud_to_laserscan -->
+  <include file="$(find pointcloud_to_laserscan)/launch/rslidar.launch" />
+
+  <!-- Gmapping -->
+  <include file="$(find mick_navigation)/launch/gmapping.launch" />
+  
+ <!-- RViz -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/gmapping.rviz" />
+
+
+</launch>

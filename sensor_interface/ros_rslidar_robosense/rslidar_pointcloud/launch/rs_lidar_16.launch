@@ -20,6 +20,6 @@
     <param name="channel_path" value="$(arg lidar_param_path)/ChannelNum.csv" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find rslidar_pointcloud)/rviz_cfg/rslidar.rviz" />
+  <!-- node name="rviz" pkg="rviz" type="rviz"  args="-d $(find rslidar_pointcloud)/rviz_cfg/rslidar.rviz" /-->
 
 </launch>

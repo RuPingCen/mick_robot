@@ -244,7 +244,7 @@ int main(int argc,char** argv)
 				if(uart_recive_flag)
 				{
 					uart_recive_flag=0;
-					//calculate_position_for_odometry();
+					calculate_position_for_odometry();
 					//odom_pub.publish(serial_data);//将串口数据发布到主题sensor
 				}
 				else
@@ -740,9 +740,9 @@ void publish_imu_mag(void)
 	imu_msg.linear_acceleration.z = imu_chassis.az/32768.0f*4;
 	imu_pub.publish(imu_msg);
 
-    	imu_broadcaster.sendTransform(tf::StampedTransform(
-        	tf::Transform(tf::Quaternion(imu_chassis.qx,imu_chassis.qy, imu_chassis.qz,
-		 	imu_chassis.qw),tf::Vector3(0, 0, 0)),ros::Time::now(),"world", "imu"));
+    	//imu_broadcaster.sendTransform(tf::StampedTransform(
+        //	tf::Transform(tf::Quaternion(imu_chassis.qx,imu_chassis.qy, imu_chassis.qz,
+	//	 	imu_chassis.qw),tf::Vector3(0, 0, 0)),ros::Time::now(),"world", "imu"));
 
 	mag_msg.magnetic_field.x = imu_chassis.mx;
 	mag_msg.magnetic_field.y = imu_chassis.my;

@@ -13,7 +13,7 @@
   <!-- RplidarA3 -->
   <!--include file="$(find rplidar_ros)/launch/rplidar_a3.launch" /-->
 
-  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.0 0 0.7 -3.1415926 0 0 base_link laser 50" />
+  <!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0.0 0 0.7 -3.1415926 0 0 base_link laser 50" /-->
 
 
 </launch>
