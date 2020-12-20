@@ -115,9 +115,9 @@
   <link name="rslidar">
      <visual>
       <geometry>
-          <mesh filename="package://mick_description/urdf/mesh/RS-LiDAR-16.stl" scale="0.001 0.001 0.001">
-          </mesh>
-         <!--cylinder length=".0826" radius="0.0487"/-->
+          <!--mesh filename="package://mick_description/urdf/mesh/RS-LiDAR-16.stl" scale="0.001 0.001 0.001">
+          </mesh-->
+         <cylinder length=".0826" radius="0.0487"/>
       </geometry>
       <material name="">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
@@ -125,7 +125,7 @@
     </visual>
   </link>
 
-  <joint name="laser_joint" type="fixed">
+  <joint name="laser_joint" type="continuous">
     <parent link="base_link"/>
     <child link="rslidar"/>
     <origin xyz="0.0 0.0 0.80" rpy="0 0 0"/>
@@ -163,7 +163,7 @@
     </visual>
   </link>
 
-  <joint name="part1_joint" type="fixed">
+  <joint name="part1_joint" type="continuous">
     <parent link="body"/>
     <child link="part1"/>
     <origin xyz="0.17 0.17 0.32"/>
@@ -180,7 +180,7 @@
     </visual>
   </link>
 
-  <joint name="part2_joint" type="fixed">
+  <joint name="part2_joint" type="continuous">
     <parent link="body"/>
     <child link="part2"/>
     <origin xyz="0.17 -0.17 0.32"/>
@@ -197,7 +197,7 @@
     </visual>
   </link>
 
-  <joint name="part3_joint" type="fixed">
+  <joint name="part3_joint" type="continuous">
     <parent link="body"/>
     <child link="part3"/>
     <origin xyz="-0.17 -0.17 0.32"/>
@@ -214,7 +214,7 @@
     </visual>
   </link>
 
-  <joint name="part4_joint" type="fixed">
+  <joint name="part4_joint" type="continuous">
     <parent link="body"/>
     <child link="part4"/>
     <origin xyz="-0.17 0.17 0.32"/>
