@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="rviz" default="true"/>
+   <!-- chassis -->
+  <include file="$(find mick_bringup)/launch/mickx4_bringup_v2.launch" />
+
+   <!-- imu -->
+  <include file="$(find imu_driver)/launch/wit_imu.launch" />
+
+ 
+ <!-- RViz -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_bringup)/rviz/test_odom.rviz" />
+
+
+</launch>
