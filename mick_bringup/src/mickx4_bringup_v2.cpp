@@ -689,7 +689,7 @@ void publish_odomtery(float  position_x,float position_y,float oriention,float v
 	odom_trans.transform.translation.z = 0.0;
 	odom_trans.transform.rotation = odom_quat;        
 	//发布tf坐标变化
-	odom_broadcaster.sendTransform(odom_trans);
+	//odom_broadcaster.sendTransform(odom_trans);
 
 	//载入里程计时间戳
 	odom.header.stamp = ros::Time::now(); 

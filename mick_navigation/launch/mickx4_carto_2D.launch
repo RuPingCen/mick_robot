@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="rviz" default="true"/>
+   <!-- chassis -->
+  <!--include file="$(find mick_bringup)/launch/mickx4_bringup_v2.launch" /-->
+
+   <!-- imu -->
+  <include file="$(find imu_driver)/launch/wit_imu.launch" />
+
+   <!-- urdf -->
+  <include file="$(find mick_description)/launch/state_publisher.launch" />
+
+   <!-- rslidar -->
+  <include file="$(find rslidar_pointcloud)/launch/rs_lidar_16.launch" />
+ 
+   <!-- pointcloud_to_laserscan -->
+  <include file="$(find pointcloud_to_laserscan)/launch/rslidar.launch" />
+
+ <node name="cartographer_node" pkg="cartographer_ros"
+      type="cartographer_node" args="
+          -configuration_directory $(find cartographer_ros)/configuration_files
+          -configuration_basename mickx4_mapping.lua"
+      output="screen">
+    <remap from="scan" to="/scan" />
+    <remap from="odom" to="/odom" />
+  </node>
+ 
+  <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+      type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+
+ <!-- RViz -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/mickx4_cartographer.rviz" />
+
+</launch>
