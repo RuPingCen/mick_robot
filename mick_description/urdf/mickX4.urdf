@@ -24,12 +24,28 @@
     </visual>
   </link>
 
-  <joint name="camera" type="fixed">
+  <joint name="camera_joint" type="fixed">
     <parent link="base_link"/>
     <child link="camera"/>
     <origin xyz="0.17 0.0 0.75"/>
   </joint>
 
+  <link name="imu_link">
+     <visual>
+      <geometry>
+	 <box size=".05 .02 .02"/>
+      </geometry>
+      <material name="">
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="imu_link_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.05 0.0 0.75"/>
+  </joint>
 
   <link name="rslidar">
      <visual>
@@ -56,7 +72,7 @@
         <box size="0.66 .54 .1"/>
       </geometry>
       <material name="gree">
-        <color rgba="0 0 .8 1"/>
+        <color rgba="0 0 0.8 1"/>
       </material>
     </visual>
  </link>

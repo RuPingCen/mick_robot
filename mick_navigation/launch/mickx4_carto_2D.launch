@@ -19,7 +19,7 @@
  <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory $(find cartographer_ros)/configuration_files
-          -configuration_basename mickx4_mapping.lua"
+          -configuration_basename mickx4_mapping_2d.lua"
       output="screen">
     <remap from="scan" to="/scan" />
     <remap from="odom" to="/odom" />
