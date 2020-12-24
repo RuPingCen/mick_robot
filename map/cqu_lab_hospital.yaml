@@ -1,0 +1,6 @@
+image: /home/administrator/cqu_lab_hospital.pgm
+resolution: 0.050000
+origin: [-7.750000, -87.435443, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
