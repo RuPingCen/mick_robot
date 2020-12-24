@@ -12,13 +12,15 @@
 
 [开源自主导航小车MickX4（四）底盘URDF模型](https://blog.csdn.net/crp997576280/article/details/109685109)
 
-开源自主导航小车MickX4（五）gmapping建图
+[开源自主导航小车MickX4（五）gmapping建图](https://blog.csdn.net/crp997576280/article/details/109685462)
 
-开源自主导航小车MickX4（六）cartography 建图
+[开源自主导航小车MickX4（六）cartography 2D 建图](https://blog.csdn.net/crp997576280/article/details/109685590)
 
-开源自主导航小车MickX4（七）小车室外导航
+开源自主导航小车MickX4（七）cartography 3D 建图
 
-开源自主导航小车MickX4（八）总结与展望
+开源自主导航小车MickX4（八）小车室外导航
+
+开源自主导航小车MickX4（九）总结与展望
 
 ![MickX4](https://github.com/RuPingCen/mick_robot_chasiss/raw/master/Reference/mickx4.png)
 
