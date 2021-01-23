@@ -24,8 +24,7 @@ mick 是一个开源的自主导航小车项目，使用四轮差速小车模型
 
 该开源框架支持两种类型的底盘，4轮差速底盘和麦克纳姆轮底盘，如下图所示，底盘上运行的STM32程序可以在这个[地址下载](https://github.com/RuPingCen/mick_robot_chasiss)。
 
-![MickX4](https://github.com/RuPingCen/mick_robot_chasiss/raw/master/Reference/mickx4.png)
-![MickM4](https://github.com/RuPingCen/mick_robot_chasiss/raw/master/Reference/MickM4.png)
+![MickX4](https://github.com/RuPingCen/blog/raw/master/MickRobot/fig/mick-fig1.png)
 
 ### V1.1 修改日志
   １．修改了ROS serial库参数，使得串口读取数据帧更加稳定
