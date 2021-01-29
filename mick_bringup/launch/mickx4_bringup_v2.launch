@@ -2,7 +2,7 @@
 
  
   <node pkg="mick_bringup" type="mickx4_bringup_v2" name="mickx4_bringup_v2" output="screen">
- 	  <param name="sub_imu_topic" value="/wit/imu" type="str" />
+ 	  <param name="sub_imu_topic" value="/imu/data" type="str" />
  	  <param name="sub_cmdvel_topic" value="/cmd_vel" type="str" />
 	  <param name="pub_odom_topic" value="/odom" type="str" />
 	  <param name="dev" value="/dev/mick" type="str" />

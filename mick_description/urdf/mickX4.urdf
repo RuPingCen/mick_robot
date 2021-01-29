@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <robot name="mickx4">
+
+  <link name="base_footprint"/>
+
   <link name="base_link">
      <visual>
       <geometry>
@@ -11,6 +14,12 @@
     </visual>
     <origin rpy="0 0 0" xyz="1 0 0.125"/>
  </link>
+ <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 0.01"/>
+  </joint>
+
 
   <link name="camera">
      <visual>

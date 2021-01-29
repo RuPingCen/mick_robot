@@ -131,7 +131,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
+  INCLUDE_DIRS 
 #  LIBRARIES save_imagefrom_kinect2
 #  CATKIN_DEPENDS roscpp rospy stdmsg
 #  DEPENDS system_lib
@@ -148,13 +148,18 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-	include
 	${catkin_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
 )
 
  
+add_executable(mick_imu src/mick_imu.cpp)
+
+target_link_libraries(mick_imu
+	${catkin_LIBRARIES}
+	${OpenCV_LIBRARIES}
+)
 
 add_executable(wit_imu src/wit_imu.cpp)
 

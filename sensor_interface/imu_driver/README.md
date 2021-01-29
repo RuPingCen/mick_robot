@@ -22,3 +22,9 @@
   ## 1.3 启动第七实验室的IMU设备
  
      roslaunch imu_driver seven_lab.launch
+
+  ## 1.4 启动自制IMU设备
+   
+    利用STM32读取MPU6050和HMC5883L的数据并计算欧拉角。然后将加速度计、陀螺仪、磁力计和欧拉角数据一起打包上传。由ROS节点进行解析发布到Topic上。
+ 
+     roslaunch imu_driver mick_imu.launch

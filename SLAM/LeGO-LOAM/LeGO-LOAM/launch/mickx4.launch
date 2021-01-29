@@ -1,0 +1,45 @@
+<launch>
+    
+    <!--- Sim Time -->
+    <param name="/use_sim_time" value="true" />
+ 
+    <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+    
+    <!-- Run a passthrough filter to clean NaNs -->
+    <node pkg="nodelet" type="nodelet" name="passthrough" args="load pcl/PassThrough pcl_manager" output="screen">
+        <remap from="~input" to="/rslidar_points" />
+        <remap from="/passthrough/output" to="/velodyne_points" />
+        
+        <rosparam>
+        filter_field_name: z
+        filter_limit_negative: True
+        </rosparam>
+
+    <rosparam>
+        filter_field_name: x
+        filter_limit_negative: True
+        </rosparam>
+
+    <rosparam>
+        filter_field_name: y
+        filter_limit_negative: True
+       
+        </rosparam>
+    </node>
+
+    <!--- Run Rviz-->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lego_loam)/launch/test.rviz" />
+
+    <!--- TF -->
+    <node pkg="tf" type="static_transform_publisher" name="camera_init_to_map"  args="0 0 0 1.570795   0        1.570795 /map    /camera_init 10" />
+    <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0 0 0 -1.570795 -1.570795 0        /camera /base_link   10" />
+
+ 
+    <!--- LeGO-LOAM -->    
+    <node pkg="lego_loam" type="imageProjection"    name="imageProjection"    output="screen"/>
+    <node pkg="lego_loam" type="featureAssociation" name="featureAssociation" output="screen"/>
+    <node pkg="lego_loam" type="mapOptmization"     name="mapOptmization"     output="screen"/>
+    <node pkg="lego_loam" type="transformFusion"    name="transformFusion"    output="screen"/>
+
+</launch>
+
