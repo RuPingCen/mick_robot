@@ -16,7 +16,9 @@ mick 是一个开源的自主导航小车项目，使用四轮差速小车模型
 
 [开源自主导航小车MickX4（六）cartography 2D 建图](https://blog.csdn.net/crp997576280/article/details/109685590)
 
-开源自主导航小车MickX4（七）cartography 3D 建图
+[开源自主导航小车MickX4（七）cartography 3D 建图](https://blog.csdn.net/crp997576280/article/details/111600534)
+
+[开源自主导航小车MickX4（八）LeGo-LOAM 室外3D建图](https://blog.csdn.net/crp997576280/article/details/111657554)
 
 开源自主导航小车MickX4（八）小车室外导航
 
@@ -26,6 +28,14 @@ mick 是一个开源的自主导航小车项目，使用四轮差速小车模型
 
 ![MickX4](https://github.com/RuPingCen/blog/raw/master/mick_robot/fig/mick-fig1.png)
 
+### V1.2 修改日志
+  １．在底盘节点中增加使用外部的IMU来矫正里程计的偏航角
+  
+  ２．cartographer建图配置参数
+  
+  ３．增加了LeGO-LOAM节点（从官方节点fork）
+  
+  
 ### V1.1 修改日志
   １．修改了ROS serial库参数，使得串口读取数据帧更加稳定
   
