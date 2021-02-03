@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="rviz" default="true"/>
+
+   <!-- chassis -->
+  <!--include file="$(find mick_bringup)/launch/mickx4_bringup_v2.launch" /-->
+
+   <!-- urdf -->
+  <include file="$(find mick_description)/launch/state_publisher.launch" />
+
+
+   <!-- imu -->
+  <!-- include file="$(find imu_driver)/launch/wit_imu.launch" /-->
+
+   <!-- xsens  -->
+  <include file="$(find xsens_driver)/launch/xsens_driver.launch" />
+
+   <!-- rslidar -->
+  <include file="$(find rslidar_pointcloud)/launch/rs_lidar_16.launch" />
+ 
+   <!-- pointcloud_to_laserscan -->
+  <include file="$(find pointcloud_to_laserscan)/launch/rslidar.launch" />
+
+
+  <!-- Map Server -->
+ <arg name="map_file" default="$(find mick_navigation)/map/cartograph_test.yaml"/>
+ <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- AMCL -->
+ <include file="$(find mick_navigation)/launch/include/amcl.launch.xml" />
+
+
+ <!-- Move Base -->
+ <include file="$(find mick_navigation)/launch/include/move_base_mickx4.launch.xml" />
+
+  <!-- RViz -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/localization_mickx4.rviz" />
+
+</launch>

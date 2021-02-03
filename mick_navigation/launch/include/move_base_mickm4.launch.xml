@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+ 
+<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find mick_navigation)/config/mickm4/move_base_params.yaml" command="load" />
+    <rosparam file="$(find mick_navigation)/config/mickm4/global_costmap_params.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(find mick_navigation)/config/mickm4/local_costmap_params.yaml" command="load" ns="local_costmap"/>
+    <rosparam file="$(find mick_navigation)/config/mickm4/global_planner_params.yaml" command="load" ns="GlobalPlanner"/>
+    <rosparam file="$(find mick_navigation)/config/mickm4/dwa_local_planner_params.yaml" command="load" ns-="DWAPlannerROS"/>
+    <remap from="/move_base/GlobalPlanner/plan" to="/move_base/NavfnROS/plan"/>
+ </node>
+
+
+</launch>

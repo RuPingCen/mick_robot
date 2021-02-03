@@ -2,8 +2,8 @@
 <launch>
   <arg name="rviz" default="true"/>
 
- <!-- Map Server -->
- <arg name="map_file" default="$(find mick_navigation)/map/A108.yaml"/>
+  <!-- Map Server -->
+ <arg name="map_file" default="$(find mick_navigation)/map/test.yaml"/>
  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!-- AMCL -->
@@ -11,9 +11,9 @@
 
 
  <!-- Move Base -->
-  <include file="$(find mick_navigation)/launch/include/move_base.launch.xml" />
+  <include file="$(find mick_navigation)/launch/include/move_base_mickm4.launch.xml" />
 
   <!-- RViz -->
-  <!--node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/localization.rviz" /-->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find mick_navigation)/rviz/localization.rviz" />
 
 </launch>

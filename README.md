@@ -78,6 +78,8 @@ mick_navigation: move—base导航配置文件
 # 2 运行差速底盘 （X4）
 
 ## 2.1 启动键盘控制
+使用 I J K L 按键控制小车移动，shift按键加速。注意要把遥控器拨到自动档位，使能上位机控制。
+
 
  ```
   roslaunch mick_bringup keyboard.launch
@@ -87,6 +89,31 @@ mick_navigation: move—base导航配置文件
  ```
   roslaunch mick_navigation mickx4_gmapping.launch
 ```
+
+## 2.3 cartographer 建图
+step1: 启动建图节点（传感器的启动都放在了这个launch文件中）
+
+ ```
+  roslaunch mick_navigation mickx4_carto_2D.launch
+```
+
+step2: 保存地图
+
+ ```
+  rosservice call /write_state ~/cartograph_test.pbstream
+```
+
+step3: 用 cartographer 自带的转换节点将.pbstream 文件转化为pgm和yaml文件
+
+
+ ```
+source devel_isolated/setup.bash
+
+rosrun cartographer_ros cartographer_pbstream_to_ros_map -pbstream_filename /home/administrator/cartograph_test.pbstream -map_filestem /home/administrator/cartograph_test
+```
+
+
+
 # 3 麦克纳姆轮的底盘 
 
  ```
