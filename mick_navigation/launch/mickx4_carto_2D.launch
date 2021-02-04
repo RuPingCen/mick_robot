@@ -2,7 +2,7 @@
 <launch>
   <arg name="rviz" default="true"/>
    <!-- chassis -->
-  <!--include file="$(find mick_bringup)/launch/mickx4_bringup_v2.launch" /-->
+  <include file="$(find mick_bringup)/launch/mickx4_bringup.launch" />
 
    <!-- urdf -->
   <include file="$(find mick_description)/launch/state_publisher.launch" />

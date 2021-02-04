@@ -1,4 +1,4 @@
-image: /home/administrator/catkin_ws/src/mick_robot/map/cqu_lab_hospital.pgm
+image: /home/administrator/cqu_lab_hospital.pgm
 resolution: 0.050000
 origin: [-7.750000, -87.435443, 0.0]
 negate: 0
