@@ -20,9 +20,9 @@ mick 是一个开源的自主导航小车项目，使用四轮差速小车模型
 
 [开源自主导航小车MickX4（八）LeGo-LOAM 室外3D建图](https://blog.csdn.net/crp997576280/article/details/111657554)
 
-开源自主导航小车MickX4（八）小车室外导航
+[开源自主导航小车MickX4（九）基于move_base 的自主导航框架](https://blog.csdn.net/crp997576280/article/details/113434795)
 
-开源自主导航小车MickX4（九）总结与展望
+[开源自主导航小车MickX4（十）总结与展望](https://blog.csdn.net/crp997576280/article/details/113438074#comments_14906009)
 
 该开源框架支持两种类型的底盘，4轮差速底盘和麦克纳姆轮底盘，如下图所示，底盘上运行的STM32程序可以在这个[地址下载](https://github.com/RuPingCen/mick_robot_chasiss)。
 
