@@ -63,6 +63,7 @@ typedef struct{
 		uint16_t	offset_angle;   //电机启动时候的零偏角度
 		int32_t		round_cnt;     //电机转动圈数
 		int32_t		total_angle;    //电机转动的总角度
+		int32_t		counter;
 
 }moto_measure_t;
 typedef struct{
@@ -93,14 +94,14 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
 void send_speed_to_chassis(float x,float y,float w);
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
 void clear_odometry_chassis(void);
-bool analy_uart_recive_data( std_msgs::String serial_data);
+bool analy_uart_recive_data( std_msgs::String& serial_data);
 void calculate_position_for_odometry(void);
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
 
 int main(int argc,char** argv)
 {
-    string out_result;
-    bool uart_recive_flag;
+  string out_result;
+  bool uart_recive_flag;
  
 //     unsigned char buf[200];                      //定义字符串长度
 //     boost::asio::io_service iosev;
@@ -111,10 +112,10 @@ int main(int argc,char** argv)
 //     sp.set_option(serial_port::stop_bits());
 //     sp.set_option(serial_port::character_size(8));
  
-    string sub_cmdvel_topic,pub_odom_topic,dev;
-	int buad,time_out,hz;
- 	ros::init(argc, argv, "mickrobot");
-	 ros::NodeHandle n;
+  string sub_cmdvel_topic,pub_odom_topic,dev;
+  int buad,time_out,hz;
+  ros::init(argc, argv, "mickrobot");
+  ros::NodeHandle n;
 	 
 	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
 	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
@@ -135,61 +136,61 @@ int main(int argc,char** argv)
 	 ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
 	 //发布主题sensor
 	   // ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
-        odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+  odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
 	// 开启串口模块
-	 try
-	 {
-	    ros_ser.setPort(dev);
-	    ros_ser.setBaudrate(buad);
-	    //ros_serial::Timeout to = serial::Timeout::simpleTimeout(1000);
-	    serial::Timeout to = serial::Timeout::simpleTimeout(time_out);
-	    ros_ser.setTimeout(to);
-	    ros_ser.open();
-	    ros_ser.flushInput(); //清空缓冲区数据
-	 }
-	 catch (serial::IOException& e)
-	 {
-	      ROS_ERROR_STREAM("Unable to open port ");
-	      return -1;
-	}
+  try
+  {
+    ros_ser.setPort(dev);
+    ros_ser.setBaudrate(buad);
+    //ros_serial::Timeout to = serial::Timeout::simpleTimeout(1000);
+    serial::Timeout to = serial::Timeout::simpleTimeout(time_out);
+    ros_ser.setTimeout(to);
+    ros_ser.open();
+    ros_ser.flushInput(); //清空缓冲区数据
+  }
+  catch (serial::IOException& e)
+  {
+    ROS_ERROR_STREAM("Unable to open port ");
+    return -1;
+  }
 	if(ros_ser.isOpen())
 	{
-	   ros_ser.flushInput(); //清空缓冲区数据
-	    ROS_INFO_STREAM("Serial Port opened");
+    ros_ser.flushInput(); //清空缓冲区数据
+    ROS_INFO_STREAM("Serial Port opened");
 	}
 	else
 	{
-	    return -1;
+	  return -1;
 	}
  
   ros::Rate loop_rate(hz);
- 
- clear_odometry_chassis();
- bool init_OK=false;
-while(!init_OK)	
-{
-              clear_odometry_chassis();
-		     ROS_INFO_STREAM("clear odometry ..... ");
-		    if(ros_ser.available())
-			 {
-			    std_msgs::String serial_data;
-			    string str_tem;
-			    //获取串口数据
-			    serial_data.data = ros_ser.read(ros_ser.available());
-			    str_tem =  serial_data.data;
-			   // cout<<"Recived "<<serial_data.data.c_str()<<endl;
-			   // ROS_INFO_STREAM(serial_data.data.c_str());
-			    if(str_tem.find("OK",0) )
-			       init_OK =true;
-			}
-                       ros::spinOnce();
-                       loop_rate.sleep();
-           
-}
- ROS_INFO_STREAM("clear odometry successful !");
+
+  clear_odometry_chassis();
+  bool init_OK=false;
+  while(!init_OK)	
+  {
+    clear_odometry_chassis();
+    ROS_INFO_STREAM("clear odometry ..... ");
+    if(ros_ser.available())
+    {
+      std_msgs::String serial_data;
+      string str_tem;
+      //获取串口数据
+      serial_data.data = ros_ser.read(ros_ser.available());
+      str_tem =  serial_data.data;
+      // cout<<"Recived "<<serial_data.data.c_str()<<endl;
+      // ROS_INFO_STREAM(serial_data.data.c_str());
+      if(str_tem.find("OK",0) )
+          init_OK =true;
+    }
+    ros::spinOnce();
+    loop_rate.sleep();
+            
+  }
+  ROS_INFO_STREAM("clear odometry successful !");
    
-    while(ros::ok())
-    { 
+  while(ros::ok())
+  { 
 
  //			write(sp, buffer("Hello world", 12));//read and write can't use in same time?
 			
@@ -208,52 +209,49 @@ while(!init_OK)
 // 			time_stamp =time_val.tv_sec+ time_val.tv_usec/1000000.0;
 // 			 cout<<"time:" <<  time_stamp<<endl;
                 //使用ＲＯＳ serial 
-             while(ros_ser.available()<100)
-			 {
-			   //ROS_INFO_STREAM("wait"); 
-			   sleep(0.001); //延时0.1秒,确保有数据进入
-			}       
-			 if(ros_ser.available() )
-			 {
-			    //ROS_INFO_STREAM("Reading from serial port");
-			    std_msgs::String serial_data;
-			    //获取串口数据
-			    serial_data.data = ros_ser.read(ros_ser.available());
-			   uart_recive_flag = analy_uart_recive_data(serial_data);
-			   if(uart_recive_flag)
-			   {
-			    calculate_position_for_odometry();
-			    // odom_pub.publish(serial_data);//将串口数据发布到主题sensor
-			  }
-			   else
-			   {
-			      //serial_data.data = ros_ser.read(ros_ser.available());
-			    ros_ser.flushInput(); //清空缓冲区数据
-			    //sleep(0.5);            //延时0.1秒,确保有数据进入
-			   }
-			}
-                ros::spinOnce();
-                loop_rate.sleep();
-			
+    while(ros_ser.available()<100)
+    {
+    //ROS_INFO_STREAM("wait"); 
+    sleep(0.001); //延时0.1秒,确保有数据进入
+    }       
+    if(ros_ser.available() )
+    {
+      //ROS_INFO_STREAM("Reading from serial port");
+      std_msgs::String serial_data;
+      //获取串口数据
+      serial_data.data = ros_ser.read(ros_ser.available());
+      uart_recive_flag = analy_uart_recive_data(serial_data);
+      if(uart_recive_flag)
+      {
+        calculate_position_for_odometry();
+        // odom_pub.publish(serial_data);//将串口数据发布到主题sensor
+      }
+      else
+      {
+        //serial_data.data = ros_ser.read(ros_ser.available());
+        ros_ser.flushInput(); //清空缓冲区数据
+        //sleep(0.5);            //延时0.1秒,确保有数据进入
+      }
     }
+    ros::spinOnce();
+    loop_rate.sleep();	
+  }
    
-    std::cout<<" EXIT ..."<<std::endl;
-    ros::waitForShutdown();
-    ros::shutdown();
+  std::cout<<" EXIT ..."<<std::endl;
+  ros::waitForShutdown();
+  ros::shutdown();
 
-    return 1;
-
+  return 1;
 }
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-//ROS_INFO_STREAM("Write to serial port" << msg->data);
- // ostringstream os;
+  //ROS_INFO_STREAM("Write to serial port" << msg->data);
+  // ostringstream os;
   float speed_x,speed_y,speed_w;
   float v1=0,v2=0,v3=0,v4=0;
   // os<<"speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z<<'\n';
- //cout<<os.str()<<endl;
-//send_speed_to_chassis(msg->linear.x*10,msg->linear.y*10,msg->angular.z*2);
-
+  //cout<<os.str()<<endl;
+  //send_speed_to_chassis(msg->linear.x*10,msg->linear.y*10,msg->angular.z*2);
   
   speed_x = msg->linear.x;
   speed_y = msg->linear.y;
@@ -325,7 +323,7 @@ void send_speed_to_chassis(float x,float y,float w)
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 {
   uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速偏移１００００转
+  unsigned int speed_0ffset=10000; //转速偏移10000转
 
   unsigned char i,counter=0;
   unsigned char  cmd;
@@ -364,7 +362,7 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 void clear_odometry_chassis(void)
 {
    uint8_t data_tem[50];
-  unsigned int speed_0ffset=10000; //转速便宜１００００转
+  unsigned int speed_0ffset=10000; //转速偏移 10000转
   unsigned char i,counter=0;
   unsigned char  cmd,resave=0x00;
   unsigned int check=0;
@@ -404,7 +402,8 @@ void clear_odometry_chassis(void)
  * @function 解析串口发送过来的数据帧
  * 成功则返回true　否则返回false
  */
-bool  analy_uart_recive_data( std_msgs::String serial_data)
+/*
+bool analy_uart_recive_data( std_msgs::String serial_data)
 {
   unsigned char reviced_tem[500];
   uint16_t len=0,i=0,j=0;
@@ -414,34 +413,34 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
   len=serial_data.data.size();
   if(len<1 || len>500)
   {
-	ROS_INFO_STREAM("serial data is too short ,  len: " << serial_data.data.size() );
-     return false; //数据长度太短　
-   }
-   ROS_INFO_STREAM("Read: " << serial_data.data.size() );
+    ROS_INFO_STREAM("serial data is too short ,  len: " << serial_data.data.size() );
+    return false; //数据长度太短　
+  }
+  ROS_INFO_STREAM("Read: " << serial_data.data.size() );
 
    // 有可能帧头不在第一个数组位置
   for( i=0;i<len;i++) 
   {
-	 tem_last=  tem_curr;
-	 tem_curr = serial_data.data.at(i);
-	 if(tem_last == 0xAE && tem_curr==0xEA&&rec_flag==0) //在接受的数据串中找到帧头　
-	 {
-		 rec_flag=1;
-		 reviced_tem[j++]=tem_last;
-		 reviced_tem[j++]=tem_curr;
-		 ROS_INFO_STREAM("found frame head" ); 
-	}
-	else if (rec_flag==1)
-	{
-		reviced_tem[j++]=serial_data.data.at(i);
-		if(tem_last == 0xEF && tem_curr==0xFE)
-		{
-			header_count++;
-			rec_flag=2;
-		}
-	}
-	else
-		rec_flag=0;
+    tem_last=  tem_curr;
+    tem_curr = serial_data.data.at(i);
+    if(tem_last == 0xAE && tem_curr==0xEA&&rec_flag==0) //在接受的数据串中找到帧头　
+    {
+      rec_flag=1;
+      reviced_tem[j++]=tem_last;
+      reviced_tem[j++]=tem_curr;
+      ROS_INFO_STREAM("found frame head" ); 
+    }
+    else if (rec_flag==1)
+    {
+      reviced_tem[j++]=serial_data.data.at(i);
+      if(tem_last == 0xEF && tem_curr==0xFE)
+      {
+        header_count++;
+        rec_flag=2;
+      }
+    }
+    else
+      rec_flag=0;
   }
   // 检验数据长度和校验码是否正确
 //   if(reviced_tem[len-3] ==check || reviced_tem[len-3]==0xff)
@@ -452,45 +451,152 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
   step=0;
   for(i=0;i<header_count;i++) 
   {
-	  len = (reviced_tem[2+step] +4 ) ; //第一个帧头的长度
-	  //cout<<"read head :" <<i<< "      len:   "<<len;
-	   if(reviced_tem[0+step] ==0xAE && reviced_tem[1+step] == 0xEA && reviced_tem[len-2+step]==0xEF &&reviced_tem[len-1+step]==0xFE) 
-      {//检查帧头帧尾是否完整
-		  if (reviced_tem[3+step] ==0x01 )
-		  {
-			  //ROS_INFO_STREAM("recived motor  data" ); 
-				i=4;
-				motor_upload_counter.byte_data[3]=reviced_tem[i++];
-				motor_upload_counter.byte_data[2]=reviced_tem[i++];
-				motor_upload_counter.byte_data[1]=reviced_tem[i++];
-				motor_upload_counter.byte_data[0]=reviced_tem[i++];
-				for(int j=0;j<4;j++)
+    len = (reviced_tem[2+step] +4 ) ; //第一个帧头的长度
+    //cout<<"read head :" <<i<< "      len:   "<<len;
+    if(reviced_tem[0+step] ==0xAE && reviced_tem[1+step] == 0xEA && reviced_tem[len-2+step]==0xEF &&reviced_tem[len-1+step]==0xFE) 
+    {//检查帧头帧尾是否完整
+      if (reviced_tem[3+step] ==0x01 )
+      {
+          //ROS_INFO_STREAM("recived motor  data" ); 
+          i=4;
+          motor_upload_counter.byte_data[3]=reviced_tem[i++];
+          motor_upload_counter.byte_data[2]=reviced_tem[i++];
+          motor_upload_counter.byte_data[1]=reviced_tem[i++];
+          motor_upload_counter.byte_data[0]=reviced_tem[i++];
+          for(int j=0;j<4;j++)
+          {
+            speed_rpm.int16_dat=0;
+            total_angle.int32_dat =0;
+            round_cnt.int32_dat=0;
+            
+            speed_rpm.byte_data[1] = reviced_tem[i++] ; 
+            speed_rpm.byte_data[0] = reviced_tem[i++] ;
+
+            total_angle.byte_data[3]=reviced_tem[i++]; 
+            total_angle.byte_data[2]=reviced_tem[i++];
+            total_angle.byte_data[1]=reviced_tem[i++];
+            total_angle.byte_data[0]=reviced_tem[i++];
+            
+            round_cnt.byte_data[3]=reviced_tem[i++]; 
+            round_cnt.byte_data[2]=reviced_tem[i++];
+            round_cnt.byte_data[1] = reviced_tem[i++] ; 
+            round_cnt.byte_data[0] = reviced_tem[i++] ;
+
+            moto_chassis[j].angle = reviced_tem[i++] *256; 
+            moto_chassis[j].angle += reviced_tem[i++];
+
+            moto_chassis[j].Temp = reviced_tem[i++]; 
+
+            moto_chassis[j].round_cnt =  round_cnt.int32_dat;
+            moto_chassis[j].speed_rpm = speed_rpm.int16_dat;
+            moto_chassis[j].total_angle = total_angle.int32_dat;
+          }
+          // 根据电机安装的位置，第３号和第４号电机方向相反
+          moto_chassis[2].speed_rpm = -moto_chassis[2].speed_rpm ;
+          moto_chassis[2].total_angle = -moto_chassis[2].total_angle;
+          moto_chassis[2].round_cnt = -moto_chassis[2].round_cnt;
+
+          moto_chassis[3].speed_rpm = -moto_chassis[3].speed_rpm ;
+          moto_chassis[3].total_angle = -moto_chassis[3].total_angle;
+          moto_chassis[3].round_cnt = -moto_chassis[3].round_cnt;
+          ROS_INFO_STREAM("recived motor data" ); 
+          for(i=0;i<4;i++)
+          {
+            // 打印四个电机的转速、转角、温度等信息
+            // ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat);
+            //ROS_INFO_STREAM("ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle
+            //  <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
+            cout<<"M "<< i <<": " <<motor_upload_counter.int32_dat<<endl;
+            cout<<"ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle<<endl;
+          }
+      }
+      else if (reviced_tem[3+step] ==0x10 )
+      {
+        ROS_INFO_STREAM("recived imu  data" ); 
+      }
+      else if (reviced_tem[3+step] ==0x11 )
+      {
+        ROS_INFO_STREAM("recived Ulrat  data" ); 
+      }
+      else;
+			//return  true;
+	  }
+    else
+    {
+      ROS_WARN_STREAM("frame head is wrong" ); 
+      return  false;	
+    }
+    step+=len; 
+  }
+  return  true;	         
+}
+ */
+
+bool analy_uart_recive_data(std_msgs::String& serial_data)
+{
+	uint8_t reviced_tem[500]; 
+	uint16_t data_length=0,i=0,len;
+	uint8_t flag=0;
+ 
+	data_length=serial_data.data.size();
+	if(data_length<1 || data_length>500)
+	{
+		//ros_ser.flushInput(); //清空缓冲区数据	
+		ROS_WARN_STREAM("serial data is too long ,  len: " << serial_data.data.size() );
+		return false;
+	}
+			  
+	for(i=0;i<data_length;i++)
+	{	
+		reviced_tem[i] =serial_data.data.at(i);
+	}
+
+   // 有可能帧头不在第一个数组位置
+  for( i=0;i<data_length; ) 
+  {
+	  
+	if(reviced_tem[i] ==0xAE && reviced_tem[1+i] == 0xEA) 
+    { 
+	  	len = reviced_tem[2+i]+4; //第一个帧头的长度
+		 
+		uint8_t sum=0x00;
+		for(int j=2+i;j<len-3+i;j++)
+		{
+		    sum+=reviced_tem[j];
+		}
+		// if(sum != reviced_tem[len-3+i]) 
+		// {
+		// 	ROS_WARN_STREAM("check sum is error " );  
+		// 	cout<<"sum:"<<hex<<sum<<"  "<<reviced_tem[len-3+i];
+		// } 	
+		if(reviced_tem[len-2+i]==0xEF && reviced_tem[len-1+i]==0xFE) 
+      	{   
+			if (reviced_tem[3+i] ==0x01 )
+			{
+				//ROS_INFO_STREAM("recived motor  data" ); 
+				uint16_t j=i+4;
+				uint32_t counter = (reviced_tem[j] <<24|reviced_tem[j+1] <<16|reviced_tem[j+2] <<8|reviced_tem[j+3]);
+				
+				for(int n =0;n<4;n++)
 				{
-					speed_rpm.int16_dat=0;
-					total_angle.int32_dat =0;
-					round_cnt.int32_dat=0;
+					j=i+8+n*13;
+					moto_chassis[n].speed_rpm = (reviced_tem[j]<<8|reviced_tem[j+1]);
+
+					int32_t total_angle = (reviced_tem[j+2] <<24|reviced_tem[j+3] <<16|
+												reviced_tem[j+4] <<8|reviced_tem[j+5]);
+
+
+					int32_t round_cnt = (reviced_tem[j+6] <<24|reviced_tem[j+7] <<16|
+												reviced_tem[j+8] <<8|reviced_tem[j+9]);
 					
-					speed_rpm.byte_data[1] = reviced_tem[i++] ; 
-					speed_rpm.byte_data[0] = reviced_tem[i++] ;
+					int16_t angle = (reviced_tem[j]<<10|reviced_tem[j+11]);
+					int16_t Temp =reviced_tem[j+12];
 
-					total_angle.byte_data[3]=reviced_tem[i++]; 
-					total_angle.byte_data[2]=reviced_tem[i++];
-					total_angle.byte_data[1]=reviced_tem[i++];
-					total_angle.byte_data[0]=reviced_tem[i++];
-					
-					round_cnt.byte_data[3]=reviced_tem[i++]; 
-					round_cnt.byte_data[2]=reviced_tem[i++];
-					round_cnt.byte_data[1] = reviced_tem[i++] ; 
-					round_cnt.byte_data[0] = reviced_tem[i++] ;
-
-					moto_chassis[j].angle = reviced_tem[i++] *256; 
-					moto_chassis[j].angle += reviced_tem[i++];
-
-					moto_chassis[j].Temp = reviced_tem[i++]; 
-
-					moto_chassis[j].round_cnt =  round_cnt.int32_dat;
-					moto_chassis[j].speed_rpm = speed_rpm.int16_dat;
-					moto_chassis[j].total_angle = total_angle.int32_dat;
+					moto_chassis[n].total_angle = total_angle;
+					moto_chassis[n].round_cnt =  round_cnt;
+					moto_chassis[n].angle = angle; 
+					moto_chassis[n].Temp = Temp; 
+					moto_chassis[n].counter = counter;
 				}
 				// 根据电机安装的位置，第３号和第４号电机方向相反
 				moto_chassis[2].speed_rpm = -moto_chassis[2].speed_rpm ;
@@ -500,34 +606,43 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
 				moto_chassis[3].speed_rpm = -moto_chassis[3].speed_rpm ;
 				moto_chassis[3].total_angle = -moto_chassis[3].total_angle;
 				moto_chassis[3].round_cnt = -moto_chassis[3].round_cnt;
-			   ROS_INFO_STREAM("recived motor data" ); 
-			   	for(i=0;i<4;i++)
+				ROS_INFO_STREAM("recived motor data" ); 
+				for(i=0;i<4;i++)
 				{
-					// 打印四个电机的转速、转角、温度等信息
-					// ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat);
-					//ROS_INFO_STREAM("ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle
-					//  <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
-					cout<<"M "<< i <<": " <<motor_upload_counter.int32_dat<<endl;
-					cout<<"ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle<<endl;
+					//打印四个电机的转速、转角、温度等信息
+					ROS_INFO_STREAM("M "<< i <<": " <<moto_chassis[i].counter<<"  V: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle
+					 <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
 				}
-		  }
-		  else if (reviced_tem[3+step] ==0x10 )
-			{
-				ROS_INFO_STREAM("recived imu  data" ); 
+				calculate_position_for_odometry();
+				flag = 0x01;
 			}
-			else if (reviced_tem[3+step] ==0x11 )
+			else if (reviced_tem[3+i] ==0x10 )
 			{
-				ROS_INFO_STREAM("recived Ulrat  data" ); 
+				uint16_t j =4+i;
+				
+				//ROS_INFO_STREAM("recived imu  data" ); 
+				 
+				flag = 0x01;
 			}
-			else;
-			//return  true;
-	  }
-	   else
-      {
-		ROS_WARN_STREAM("frame head is wrong" ); 
-         return  false;	
-      }
-      step+=len; 
+			else
+			{
+				ROS_WARN_STREAM("unrecognize frame" ); 
+				flag = 0x00;
+			}
+		}
+	}
+	else 
+		flag = 0x00;   
+	
+	if(flag == 0x01)
+	{
+		i = i+len;
+	}
+	else
+	{
+		i = i+1;
+	}
+   
   }
  return  true;	         
 }

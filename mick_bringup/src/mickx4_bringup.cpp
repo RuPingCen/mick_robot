@@ -1,9 +1,10 @@
 /**
- * mick四轮差速底盘， 接受cmd_vel 话题的数据，将其转化成转速指令 然后下发到底盘的STM32控制器中
+ * mick四轮差速底盘， 
+ * 1、接收cmd_vel 话题的数据，将其转化成转速指令 
+ * 2、然后下发到底盘的STM32控制器中
  *  注意：该四轮差速模型与两轮差速模型相同，发送数据的时候需要把1/2号电机的速度设置为一样
  * 3/4号电机速度设置为一样，
- * 
- * 
+  * 
  * 增加IMU数据上传
  * 增加超声波上传
  * 
@@ -58,16 +59,12 @@ ros::Publisher odom_pub;
 typedef struct{
 		uint16_t 	angle;				//abs angle range:[0,8191] 电机转角绝对值
 		uint16_t 	last_angle;	  //abs angle range:[0,8191]
-	
 		int16_t	 	speed_rpm;       //转速
- 
 		int16_t  	given_current;   //实际的转矩电流
 		uint8_t  	Temp;           //温度
-
 		uint16_t	offset_angle;   //电机启动时候的零偏角度
 		int32_t		round_cnt;     //电机转动圈数
 		int32_t		total_angle;    //电机转动的总角度
-		
 		uint32_t counter;
 }moto_measure_t;
 typedef struct{
@@ -77,7 +74,6 @@ typedef struct{
  		uint16_t 	mx,my,mz;	
 		float pitch,roll,yaw;
 		float pitch_rad,roll_rad,yaw_rad;
-		
 }imu_measure_t;
 
 
@@ -123,7 +119,7 @@ int main(int argc,char** argv)
     string sub_cmdvel_topic,pub_odom_topic,dev;
 	int buad,time_out,hz;
  	ros::init(argc, argv, "mickx4");
-	 ros::NodeHandle n("~");
+	ros::NodeHandle n("~");
 	 
 	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
 	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
@@ -140,46 +136,46 @@ int main(int argc,char** argv)
 	ROS_INFO_STREAM("hz:   "<<hz);
 	 
 	
-	 //订阅主题command
-	 ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
-	 //发布主题sensor
-	   // ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
-        odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	//订阅主题command
+	ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
+	//发布主题sensor
+	// ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
+	odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
 	// 开启串口模块
 	 try
 	 {
-			 ros_ser.setPort(dev);
-			 ros_ser.setBaudrate(buad);
-			 serial::Timeout to = serial::Timeout::simpleTimeout(1000);
-			 //serial::Timeout to = serial::Timeout(1,time_out,0,time_out,0);
-			 to.inter_byte_timeout=1;
-			 to.read_timeout_constant=5;
-			 to.read_timeout_multiplier=0;
-			 ros_ser.setTimeout(to);
-			 ros_ser.open();
-			 ros_ser.flushInput(); //清空缓冲区数据
+		ros_ser.setPort(dev);
+		ros_ser.setBaudrate(buad);
+		serial::Timeout to = serial::Timeout::simpleTimeout(1000);
+		//serial::Timeout to = serial::Timeout(1,time_out,0,time_out,0);
+		to.inter_byte_timeout=1;
+		to.read_timeout_constant=5;
+		to.read_timeout_multiplier=0;
+		ros_ser.setTimeout(to);
+		ros_ser.open();
+		ros_ser.flushInput(); //清空缓冲区数据
 	 }
 	 catch (serial::IOException& e)
 	 {
-	      ROS_ERROR_STREAM("Unable to open port ");
-	      return -1;
+		ROS_ERROR_STREAM("Unable to open port ");
+		return -1;
 	}
 	if(ros_ser.isOpen())
 	{
-	   ros_ser.flushInput(); //清空缓冲区数据
-	    ROS_INFO_STREAM("Serial Port opened");
+		ros_ser.flushInput(); //清空缓冲区数据
+		ROS_INFO_STREAM("Serial Port opened");
 	}
 	else
 	{
 	    return -1;
 	}
  
-  ros::Rate loop_rate(hz);
- 
- clear_odometry_chassis();
- bool init_OK=false;
-while(!init_OK)	
-{
+	ros::Rate loop_rate(hz);
+
+	clear_odometry_chassis();
+	bool init_OK=false;
+	while(!init_OK)	
+	{
 		clear_odometry_chassis();
 		ROS_INFO_STREAM("clear odometry ..... ");
 		if(ros_ser.available())
@@ -195,43 +191,39 @@ while(!init_OK)
 			init_OK =true;
 		}
 		sleep(1);
-}
- ROS_INFO_STREAM("clear odometry successful !");
+	}
+	ROS_INFO_STREAM("clear odometry successful !");
    
     while(ros::ok())
     { 
-  
-	 if(ros_ser.available() )
-	 {
-	    //ROS_INFO_STREAM("Reading from serial port");
-	    std_msgs::String serial_data;
-	    //获取串口数据
-	    serial_data.data = ros_ser.read(ros_ser.available());
-	   uart_recive_flag = analy_uart_recive_data(serial_data);
-	   if(uart_recive_flag)
-	   {
-            uart_recive_flag=0;
-	    calculate_position_for_odometry();
-	    //odom_pub.publish(serial_data);//将串口数据发布到主题sensor
-	  }
-	  // else
-	   //{
-	      //serial_data.data = ros_ser.read(ros_ser.available());
-	    //ros_ser.flushInput(); //清空缓冲区数据
-	    //sleep(0.5);            //延时0.1秒,确保有数据进入
-	  // }
-	}
-	ros::spinOnce();
-	loop_rate.sleep();
-			
+		if(ros_ser.available() )
+		{
+			//ROS_INFO_STREAM("Reading from serial port");
+			std_msgs::String serial_data;
+			//获取串口数据
+			serial_data.data = ros_ser.read(ros_ser.available());
+			uart_recive_flag = analy_uart_recive_data(serial_data);
+			if(uart_recive_flag)
+			{
+				uart_recive_flag=0;
+				calculate_position_for_odometry();
+			//odom_pub.publish(serial_data);//将串口数据发布到主题sensor
+			}
+			//else
+			//{
+			//	serial_data.data = ros_ser.read(ros_ser.available());
+			//	ros_ser.flushInput(); //清空缓冲区数据
+			//	sleep(0.5);            //延时0.1秒,确保有数据进入
+			// }
+		}
+		ros::spinOnce();
+		loop_rate.sleep();	
     }
    
     std::cout<<" EXIT ..."<<std::endl;
     ros::waitForShutdown();
     ros::shutdown();
-
     return 1;
-
 }
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 {
@@ -253,22 +245,21 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 //   v3 =-(speed_x-speed_y+WHEEL_K*speed_w);
 //   v4 =-(speed_x+speed_y+WHEEL_K*speed_w);
 
-    v1 =speed_x-0.5*WHEEL_L*speed_w;   //左边    //转化为每个轮子的线速度
-   v2 =v1;
-   v4 =-(speed_x+0.5*WHEEL_L*speed_w);
-   v3 =v4;
-  
-  v1 =v1/(2.0*WHEEL_R*WHEEL_PI);    //转换为轮子的速度　RPM
-  v2 =v2/(2.0*WHEEL_R*WHEEL_PI);
-  v3 =v3/(2.0*WHEEL_R*WHEEL_PI);
-  v4 =v4/(2.0*WHEEL_R*WHEEL_PI);
-  
-   v1 =v1*WHEEL_RATIO*60;    //转每秒转换到RPM
-  v2 =v2*WHEEL_RATIO*60;
-  v3 =v3*WHEEL_RATIO*60;
-  v4 =v4*WHEEL_RATIO*60;
-  
-  
+	v1 =speed_x-0.5*WHEEL_L*speed_w;   //左边    //转化为每个轮子的线速度
+	v2 =v1;
+	v4 =-(speed_x+0.5*WHEEL_L*speed_w);
+	v3 =v4;
+
+	v1 =v1/(2.0*WHEEL_R*WHEEL_PI);    //转换为轮子的速度　RPM
+	v2 =v2/(2.0*WHEEL_R*WHEEL_PI);
+	v3 =v3/(2.0*WHEEL_R*WHEEL_PI);
+	v4 =v4/(2.0*WHEEL_R*WHEEL_PI);
+
+	v1 =v1*WHEEL_RATIO*60;    //转每秒转换到RPM
+	v2 =v2*WHEEL_RATIO*60;
+	v3 =v3*WHEEL_RATIO*60;
+	v4 =v4*WHEEL_RATIO*60;
+
   send_rpm_to_chassis(v1,v2,v3,v4);	 
  //send_rpm_to_chassis(200,200,200,200);	
   ROS_INFO_STREAM("v1: "<<v1<<"      v2: "<<v2<<"      v3: "<<v3<<"      v4: "<<v4);
@@ -282,25 +273,19 @@ void send_speed_to_chassis(float x,float y,float w)
   unsigned char i,counter=0;
   unsigned char  cmd,length;
   unsigned int check=0;
- cmd =0xF3; //针对MickX4的小车使用F3 字段      针对MickM4的小车使用F2
+  cmd =0xF3; //针对MickX4的小车使用F3 字段      针对MickM4的小车使用F2
   data_tem[counter++] =0xAE;
   data_tem[counter++] =0xEA;
   data_tem[counter++] =0x0B;
   data_tem[counter++] =cmd;
-  
   data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
   data_tem[counter++] =((x+speed_0ffset)*100);
-  
   data_tem[counter++] =((y+speed_0ffset)*100)/256; // X
   data_tem[counter++] =((y+speed_0ffset)*100);
-  
   data_tem[counter++] =((w+speed_0ffset)*100)/256; // X
   data_tem[counter++] =((w+speed_0ffset)*100);
-  
   data_tem[counter++] =0x00;
   data_tem[counter++] =0x00;
-  
- 
   for(i=0;i<counter;i++)
   {
     check+=data_tem[i];
@@ -309,7 +294,6 @@ void send_speed_to_chassis(float x,float y,float w)
    data_tem[2] =counter-2;
   data_tem[counter++] =0xEF;
   data_tem[counter++] =0xFE;
- 
   ros_ser.write(data_tem,counter);
 }
  
