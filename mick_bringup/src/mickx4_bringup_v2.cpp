@@ -125,7 +125,7 @@ int main(int argc,char** argv)
 
     string sub_cmdvel_topic,pub_odom_topic,dev;
 	string sub_imu_topic;
-	int buad,time_out,hz;
+	int baud,time_out,hz;
 
  	ros::init(argc, argv, "mickx4");
 	ros::NodeHandle n("~");
@@ -134,7 +134,7 @@ int main(int argc,char** argv)
 	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/cmd_vel");
 	n.param<std::string>("pub_odom_topic", pub_odom_topic, "/odom");
 	n.param<std::string>("dev", dev, "/dev/mick");
-	n.param<int>("buad", buad, 115200);
+	n.param<int>("baud", baud, 115200);
 	n.param<int>("time_out", time_out, 1000);
 	n.param<int>("hz", hz, 100);
 	n.param<bool>("use_imu_topic", use_imu_topic, false);
@@ -143,7 +143,7 @@ int main(int argc,char** argv)
 	ROS_INFO_STREAM("sub_cmdvel_topic:   "<<sub_cmdvel_topic);
 	ROS_INFO_STREAM("pub_odom_topic:   "<<pub_odom_topic);
 	ROS_INFO_STREAM("dev:   "<<dev);
-	ROS_INFO_STREAM("buad:   "<<buad);
+	ROS_INFO_STREAM("baud:   "<<baud);
 	ROS_INFO_STREAM("time_out:   "<<time_out);
 	ROS_INFO_STREAM("hz:   "<<hz);
 	ROS_INFO_STREAM("use_imu_topic:   "<<use_imu_topic);  
@@ -159,7 +159,7 @@ int main(int argc,char** argv)
 	 try
 	 {
 		ros_ser.setPort(dev);
-		ros_ser.setBaudrate(buad);
+		ros_ser.setBaudrate(baud);
 		 
 		//serial::Timeout to = serial::Timeout(1,time_out,0,time_out,0);
 		// to.inter_byte_timeout=1;

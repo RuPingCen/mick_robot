@@ -159,11 +159,7 @@ target_link_libraries(mick_bringup
 	${catkin_LIBRARIES}
 	${OpenCV_LIBRARIES}
 )
-add_executable(mickx4_bringup src/mickx4_bringup.cpp)
-target_link_libraries(mickx4_bringup
-	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
-)
+
 add_executable(mickx4_bringup_v2 src/mickx4_bringup_v2.cpp)
 target_link_libraries(mickx4_bringup_v2
 	${catkin_LIBRARIES}
