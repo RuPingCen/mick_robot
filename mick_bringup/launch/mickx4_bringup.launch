@@ -8,6 +8,7 @@
 	  <param name="baud" value="115200" type="int" />
 	  <param name="time_out" value="1000" type="int" />
 	  <param name="hz" value="100" type="int" />
+	  <param name="is_pub_path" value="0" type="int" /> <!--0: 不发布底盘轨迹  1: 发布 -->
 	  <param name="chassis_type" value="0" type="int" /> <!--0: 差速底盘  1: 麦克纳姆轮底盘 -->
   </node>
 

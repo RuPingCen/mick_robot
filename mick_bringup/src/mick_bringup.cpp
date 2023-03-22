@@ -28,6 +28,7 @@
 
 #include<tf/transform_broadcaster.h>
 #include<nav_msgs/Odometry.h>
+#include<nav_msgs/Path.h>
 #include<geometry_msgs/Twist.h>
 
 #include <serial/serial.h>
@@ -45,6 +46,7 @@ using namespace std;
 using namespace boost::asio;           //定义一个命名空间，用于后面的读写操作
 
 int chassis_type = 0; //默认采用差速模式  0：差速  1-麦克纳姆轮 
+int is_pub_path = 0; //默认不发布小车底盘轨迹  0：不发布   1 发布
 
 float WHEEL_RATIO =19.0; 		//减速比 3508电机减速比为1:19
 float WHEEL_K=0.355;            // 麦克纳母轮模式
@@ -56,8 +58,9 @@ float WHEEL_PI=3.141693; 			//pi
 struct timeval time_val; //time varible
 struct timezone tz;
 double time_stamp;
+nav_msgs::Path path;
 serial::Serial ros_ser;
-ros::Publisher odom_pub;
+ros::Publisher odom_pub,path_pub;
 
 typedef struct{
 		uint16_t 	angle;				//abs angle range:[0,8191] 电机转角绝对值
@@ -130,6 +133,7 @@ int main(int argc,char** argv)
 	n.param<int>("baud", baud, 115200);
 	n.param<int>("time_out", time_out, 1000);
 	n.param<int>("hz", hz, 100);
+	n.param<int>("is_pub_path", is_pub_path, 0); // 默认不发布小车底盘轨迹
 	n.param<int>("chassis_type", chassis_type, 1); // 麦克纳姆轮模式
 	
 	
@@ -139,13 +143,15 @@ int main(int argc,char** argv)
 	ROS_INFO_STREAM("baud:   "<<baud);
 	ROS_INFO_STREAM("time_out:   "<<time_out);
 	ROS_INFO_STREAM("hz:   "<<hz);
+	ROS_INFO_STREAM("is_pub_path:   "<<chassis_type<<"\t  0:No 1:Yes"); 
 	ROS_INFO_STREAM("chassis_type:   "<<chassis_type<<"\t  0:X4 1:M4"); 
-	
+
 	//订阅主题command
 	ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
 	//发布主题sensor
 	// ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
 	odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	path_pub = n.advertise<nav_msgs::Path>(pub_odom_topic+"/path",20, true);
 	// 开启串口模块
 	 try
 	 {
@@ -179,11 +185,11 @@ int main(int argc,char** argv)
 
 	clear_odometry_chassis();
 	bool init_OK=false;
-  int init_odom_cnt =0;
+	int init_odom_cnt =0;
 	while((!init_OK) && (init_odom_cnt<10))	
 	{
 		clear_odometry_chassis();
-    init_odom_cnt++;
+		init_odom_cnt++;
 		ROS_INFO_STREAM("clear odometry ..... ");
 		if(ros_ser.available())
 		{
@@ -195,10 +201,10 @@ int main(int argc,char** argv)
 			// cout<<"Recived "<<serial_data.data.c_str()<<endl;
 			// ROS_INFO_STREAM(serial_data.data.c_str());
 			if(str_tem.find("OK",0) )
-      {
-        init_OK =true;
-        ros_ser.flushInput(); //清空缓冲区数据
-      }
+			{
+				init_OK =true;
+				ros_ser.flushInput(); //清空缓冲区数据
+			}
 		}
 		sleep(1);
 	}
@@ -369,7 +375,7 @@ void clear_odometry_chassis(void)
   unsigned char i,counter=0;
   unsigned char  cmd,resave=0x00;
   unsigned int check=0;
- cmd =0xE1;
+  cmd =0xE1;
   data_tem[counter++] =0xAE;
   data_tem[counter++] =0xEA;
   data_tem[counter++] =0x0B;
@@ -725,42 +731,51 @@ void calculate_position_for_odometry(void)
  */
 void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w)
 {
-	    static tf::TransformBroadcaster odom_broadcaster;  //定义tf对象
-	    geometry_msgs::TransformStamped odom_trans;  //创建一个tf发布需要使用的TransformStamped类型消息
-	    geometry_msgs::Quaternion odom_quat;   //四元数变量
-	    nav_msgs::Odometry odom;  //定义里程计对象
-              
-            //里程计的偏航角需要转换成四元数才能发布
-	    odom_quat = tf::createQuaternionMsgFromYaw(oriention);//将偏航角转换成四元数
+	static tf::TransformBroadcaster odom_broadcaster;  //定义tf对象
+	geometry_msgs::TransformStamped odom_trans;  //创建一个tf发布需要使用的TransformStamped类型消息
+	geometry_msgs::Quaternion odom_quat;   //四元数变量
+	nav_msgs::Odometry odom;  //定义里程计对象
+		
+	//里程计的偏航角需要转换成四元数才能发布
+	odom_quat = tf::createQuaternionMsgFromYaw(oriention);//将偏航角转换成四元数
 
-            //载入坐标（tf）变换时间戳
-            odom_trans.header.stamp = ros::Time::now();
-            //发布坐标变换的父子坐标系
-            odom_trans.header.frame_id = "odom";     
-            odom_trans.child_frame_id = "base_link";       
-            //tf位置数据：x,y,z,方向
-            odom_trans.transform.translation.x = position_x;
-            odom_trans.transform.translation.y = position_y;
-            odom_trans.transform.translation.z = 0.0;
-            odom_trans.transform.rotation = odom_quat;        
-            //发布tf坐标变化
-            odom_broadcaster.sendTransform(odom_trans);
+	//载入坐标（tf）变换时间戳
+	odom_trans.header.stamp = ros::Time::now();
+	//发布坐标变换的父子坐标系
+	odom_trans.header.frame_id = "odom";     
+	odom_trans.child_frame_id = "base_link";       
+	//tf位置数据：x,y,z,方向
+	odom_trans.transform.translation.x = position_x;
+	odom_trans.transform.translation.y = position_y;
+	odom_trans.transform.translation.z = 0.0;
+	odom_trans.transform.rotation = odom_quat;        
+	//发布tf坐标变化
+	odom_broadcaster.sendTransform(odom_trans);
 
-            //载入里程计时间戳
-            odom.header.stamp = ros::Time::now(); 
-            //里程计的父子坐标系
-            odom.header.frame_id = "odom";
-            odom.child_frame_id = "base_link";       
-            //里程计位置数据：x,y,z,方向
-            odom.pose.pose.position.x = position_x;     
-            odom.pose.pose.position.y = position_y;
-            odom.pose.pose.position.z = 0.0;
-            odom.pose.pose.orientation = odom_quat;       
-            //载入线速度和角速度
-            odom.twist.twist.linear.x = vel_linear_x;
-            odom.twist.twist.linear.y = vel_linear_y;
-            odom.twist.twist.angular.z = vel_linear_w;    
-            //发布里程计
-            odom_pub.publish(odom);
+	//载入里程计时间戳
+	odom.header.stamp = ros::Time::now(); 
+	//里程计的父子坐标系
+	odom.header.frame_id = "odom";
+	odom.child_frame_id = "base_link";       
+	//里程计位置数据：x,y,z,方向
+	odom.pose.pose.position.x = position_x;     
+	odom.pose.pose.position.y = position_y;
+	odom.pose.pose.position.z = 0.0;
+	odom.pose.pose.orientation = odom_quat;       
+	//载入线速度和角速度
+	odom.twist.twist.linear.x = vel_linear_x;
+	odom.twist.twist.linear.y = vel_linear_y;
+	odom.twist.twist.angular.z = vel_linear_w;    
+	//发布里程计
+	odom_pub.publish(odom);
+
+	//发布小车里程计数据推算的轨迹
+	geometry_msgs::PoseStamped this_pose_stamped;
+	this_pose_stamped.pose = odom.pose.pose;
+
+	path.header.stamp=odom.header.stamp;
+    path.header.frame_id="odom";
+	path.poses.push_back(this_pose_stamped);
+    path_pub.publish(path);
 }
  
