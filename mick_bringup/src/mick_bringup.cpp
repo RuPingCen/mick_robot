@@ -449,7 +449,7 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
 		if(tem_last == 0xEF && tem_curr==0xFE)
 		{
 			header_count++;
-			rec_flag=2;
+			rec_flag=0;
 		}
 	}
 	else
@@ -462,7 +462,7 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
 //     return;
   // 检验接受数据的长度
   step=0;
-  for(i=0;i<header_count;i++) 
+  for(int k=0;k<header_count;k++) 
   {
 	  len = (reviced_tem[2+step] +4 ) ; //第一个帧头的长度
 	  //cout<<"read head :" <<i<< "      len:   "<<len;
@@ -470,8 +470,8 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
       {//检查帧头帧尾是否完整
 		  if (reviced_tem[3+step] ==0x01 )
 		  {
-			  //ROS_INFO_STREAM("recived motor  data" ); 
-				i=4;
+			  ROS_INFO_STREAM("recived motor  data" ); 
+				i=4+step;
 				motor_upload_counter.byte_data[3]=reviced_tem[i++];
 				motor_upload_counter.byte_data[2]=reviced_tem[i++];
 				motor_upload_counter.byte_data[1]=reviced_tem[i++];
@@ -514,16 +514,16 @@ bool  analy_uart_recive_data( std_msgs::String serial_data)
 				moto_chassis[3].speed_rpm = -moto_chassis[3].speed_rpm ;
 				moto_chassis[3].total_angle = -moto_chassis[3].total_angle;
 				moto_chassis[3].round_cnt = -moto_chassis[3].round_cnt;
-			   ROS_INFO_STREAM("recived motor data" ); 
-			   	for(i=0;i<4;i++)
-				{
+			   //ROS_INFO_STREAM("recived motor data" ); 
+			   	//for(j=0;j<4;j++)
+				//{
 					// 打印四个电机的转速、转角、温度等信息
-					 ROS_INFO_STREAM("M "<< i <<": \t cnt: "<<moto_chassis[i].counter<<"\t V: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle );
-				   // ROS_INFO_STREAM("M "<< i <<": " <<motor_upload_counter.int32_dat ); 
+					//ROS_INFO_STREAM("M "<< j <<": \t cnt: "<<moto_chassis[j].counter<<"\t V: "<<moto_chassis[j].speed_rpm<<"  t_a: "<<moto_chassis[j].total_angle <<"  n: "<<moto_chassis[j].round_cnt <<"  a: "<<moto_chassis[j].angle );
+				   // ROS_INFO_STREAM("M "<< j <<": " <<motor_upload_counter.int32_dat ); 
 					//ROS_INFO_STREAM("ｖ : "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle ); 
-					//cout<<"M "<< i <<": " <<motor_upload_counter.int32_dat<<endl;
+					//cout<<"M "<<j <<": " <<motor_upload_counter.int32_dat<<endl;
 					//cout<<"ｖ: "<<moto_chassis[i].speed_rpm<<"  t_a: "<<moto_chassis[i].total_angle <<"  n: "<<moto_chassis[i].round_cnt <<"  a: "<<moto_chassis[i].angle<<endl;
-				}
+				//}
 		  }
 		  else if (reviced_tem[3+step] ==0x10 )
 			{
