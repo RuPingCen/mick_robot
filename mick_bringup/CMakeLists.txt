@@ -38,7 +38,6 @@ find_package(catkin REQUIRED COMPONENTS
         nav_msgs
 	rostime sensor_msgs 
 	message_filters 
-	cv_bridge
 )
 
 
@@ -150,20 +149,17 @@ catkin_package(
 # include_directories(include)
 include_directories(
 	${catkin_INCLUDE_DIRS}
-	${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(mick_bringup src/mick_bringup.cpp)
 
 target_link_libraries(mick_bringup
 	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
 )
 
 add_executable(mickx4_bringup_v2 src/mickx4_bringup_v2.cpp)
 target_link_libraries(mickx4_bringup_v2
 	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
 )
 ## Declare a C++ library
 # add_library(save_imagefrom_kinect2

@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(imu_driver)
-
-find_package(OpenCV REQUIRED)
-find_package(OpenMP)
+ 
 find_package(Eigen3 REQUIRED)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
@@ -37,7 +35,6 @@ find_package(catkin REQUIRED COMPONENTS
         nav_msgs
 	rostime sensor_msgs 
 	message_filters 
-	cv_bridge
 )
 
 
@@ -149,7 +146,6 @@ catkin_package(
 # include_directories(include)
 include_directories(
 	${catkin_INCLUDE_DIRS}
-	${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
 )
 
@@ -158,21 +154,18 @@ add_executable(mick_imu src/mick_imu.cpp)
 
 target_link_libraries(mick_imu
 	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
 )
 
 add_executable(wit_imu src/wit_imu.cpp)
 
 target_link_libraries(wit_imu
 	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
 )
 
 add_executable(seven_lab src/seven_lab.cpp)
 
 target_link_libraries(seven_lab
 	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
 )
 
  
