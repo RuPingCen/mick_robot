@@ -20,7 +20,7 @@
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h> 
 #include <std_msgs/String.h>
-
+#include <sensor_msgs/Joy.h> 
 #include<tf/transform_broadcaster.h>
 #include<nav_msgs/Odometry.h>
 #include<nav_msgs/Path.h>
@@ -31,7 +31,8 @@
 #include "chassis_4ws4wd/chassis_4ws4wd.h"  //tcp_client is the directory contained in include directory 
 
 
-
+int enable_ultra_brake = 0;
+int min_distance_ultra = 0;
 
 ledParam led_control_para ={0};
 chassis_motion_cmd motion_cmd_para={0};
@@ -43,14 +44,24 @@ nav_msgs::Path path;
 
 extern chassis_info_check_feedback_ chassis_feedback_info;
 //--------------------------
-// UDP 參數
+// UDP 参数
 extern int udp_sock;
 extern struct sockaddr_in servaddr;
 extern struct sockaddr_in  src_addr;
 extern socklen_t len;
 //---------------------------
+typedef struct
+{
+	float ch1, ch2, ch3, ch4;
+	float ch5, ch6, ch7, ch8, ch9, ch10, ch11, ch12, ch13, ch14, ch15, ch16, ch17, ch18;
+	uint8_t sw1, sw2;
 
-
+	uint32_t cnt;
+	uint8_t available;
+	uint8_t update;
+ 
+} joy_info_t;
+joy_info_t rc_joy;
 void run(chassis_motion_cmd &motion_cmd_para);
 void param_init(ros::NodeHandle &nh_);
 void calculate_position_for_odometry(void);
@@ -63,22 +74,76 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 	motion_cmd_para.v = msg->linear.x;
 	motion_cmd_para.w = msg->angular.z;
 	motion_cmd_para.motion_state = 1;  // 0 带缓冲滑行尽快的停止    1 設置速度    2 急停  
- 	write_motion_cmd(motion_cmd_para);
+
+	if(enable_ultra_brake)
+	{
+		if(chassis_feedback_info.ultrasonic_distance[0] <min_distance_ultra) // 小车前面有障碍物 小于15cm
+		{
+			if(motion_cmd_para.v > 0)
+					motion_cmd_para.v = 0;
+		}
+		if(chassis_feedback_info.ultrasonic_distance[1] <min_distance_ultra) // 小车后面有障碍物 小于15cm
+		{
+			if(motion_cmd_para.v <  0)
+				motion_cmd_para.v = 0;
+		}
+	}
+
+	if(rc_joy.update && rc_joy.sw1 != 1)
+	{
+ 		write_motion_cmd(motion_cmd_para);
+	}
+
  	//ROS_INFO_STREAM("speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z);
 }
 
+void  rc_joy_callback(const sensor_msgs::Joy::ConstPtr& joy_msg)
+{
+	rc_joy.ch1=joy_msg->axes[0];
+	rc_joy.ch2=joy_msg->axes[1];
+	rc_joy.ch3=joy_msg->axes[2];
+	rc_joy.ch4=joy_msg->axes[3];	
+
+	rc_joy.sw1=joy_msg->buttons[0];	
+	rc_joy.sw2=joy_msg->buttons[1];	
+	rc_joy.update =1;
+	rc_joy.cnt++;
+
+	if(rc_joy.sw1 == 1)
+	{
+		motion_cmd_para.v = rc_joy.ch1;
+		motion_cmd_para.w = rc_joy.ch2;
+		motion_cmd_para.motion_state = 1;  // 0 带缓冲滑行尽快的停止    1 設置速度    2 急停  
+ 		write_motion_cmd(motion_cmd_para);
+	}
+}
 int main(int argc, char **argv)
 {
+	std::string sub_cmdvel_topic,sub_joy_topic;
+	std::string pub_odom_topic,pub_path_topic,pub_ultra_topic;
+
 	ros::init(argc, argv, "chassis_4ws4wd");// ROS节点初始化
 
 	ros::NodeHandle nh_("~"); // 创建节点句柄
 	ros::Rate loop_rate(100);  //Hz
- 	 
+
+	nh_.param<int>("enable_ultra_brake", enable_ultra_brake, 0);
+	nh_.param<int>("min_distance_ultra", min_distance_ultra, 15);
+	nh_.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/rc_remote/joy");
+	nh_.param<std::string>("sub_joy_topic", sub_joy_topic, "/4ws4wd/cmd_vel");
+ 	nh_.param<std::string>("pub_odom_topic", pub_odom_topic, "/4ws4wd/odom");
+	nh_.param<std::string>("pub_path_topic", pub_path_topic, "/4ws4wd/path");
+	nh_.param<std::string>("pub_ultra_topic", pub_ultra_topic, "/4ws4wd/ultrasonic");
+ 
+	ROS_INFO_STREAM("enable_ultra_brake:   " << enable_ultra_brake);
+	ROS_INFO_STREAM("min_distance_ultra:   " << min_distance_ultra);
+
 	//ros::Subscriber user_point_sub_;
-	ros::Subscriber command_sub = nh_.subscribe("/cmd_vel", 10, cmd_vel_callback);
-	odom_pub= nh_.advertise<nav_msgs::Odometry>("/4ws4wd/odom", 20); //定义要发布/odom主题
-	path_pub = nh_.advertise<nav_msgs::Path>("/4ws4wd/path",20, true);
-    ultra_pub = nh_.advertise<gsy4ws4wd_bringup::ultrasonic>("/4ws4wd/ultrasonic", 10);
+	ros::Subscriber joy_sub = nh_.subscribe(sub_joy_topic, 10, rc_joy_callback);
+	ros::Subscriber command_sub = nh_.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
+	odom_pub= nh_.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
+	path_pub = nh_.advertise<nav_msgs::Path>(pub_path_topic,20, true);
+    ultra_pub = nh_.advertise<gsy4ws4wd_bringup::ultrasonic>(pub_ultra_topic, 10);
 
 	if(chassis_init()<0)//udp initialization
 	{

@@ -1,21 +1,13 @@
-<launch>
-
-  <!-- Joy node -->
-  <!-- node pkg="joy" type="joy_node" name="joy_node" output="screen" -->
-
-    <!-- param name="dev" value="/dev/input/js0" type="string "/ -->
-    <!-- param name="deadzone" value="0.05" type="double"/ -->    
-    <!-- param name="autorepeat_rate" value="1000" type="double"/ --> 
-     
-  <!-- /node -->
- 
+<launch> 
   <node pkg="gsy4ws4wd_bringup" type="gsy4ws4wd_bringup" name="gsy4ws4wd_bringup" output="screen">
-  	 <param name="l_scale_1" value="800" type="double"/> 
-  	 <param name="w_scale_1" value="400" type="double"/> 
-  	 <param name="l_scale_2" value="1500" type="double"/> 
-  	 <param name="w_scale_2" value="900" type="double"/> 
-  	 
-      <remap from="/4ws4wd/cmd_vel" to="/cmd_vel"/>
+      <param name="enable_ultra_brake" value="1" type="int"/> <!--  是否启动超声波数据进行紧急刹车 -->
+      <param name="min_distance_ultra" value="18" type="int"/>  <!--  障碍物最近距离开始刹车 -->
+
+      <param name="sub_cmdvel_topic" value="/rc_remote/joy" type="string "/>
+      <param name="sub_joy_topic" value="/4ws4wd/cmd_vel" type="string "/>
+      <param name="pub_odom_topic" value="/4ws4wd/odom" type="string "/>
+      <param name="pub_path_topic" value="/4ws4wd/path" type="string "/>
+      <param name="pub_ultra_topic" value="/4ws4wd/ultrasonic" type="string "/>
   </node>
  
 </launch>
