@@ -97,7 +97,7 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
  	//ROS_INFO_STREAM("speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z);
 }
 
-void  rc_joy_callback(const sensor_msgs::Joy::ConstPtr& joy_msg)
+void rc_joy_callback(const sensor_msgs::Joy::ConstPtr& joy_msg)
 {
 	rc_joy.ch1=joy_msg->axes[0];
 	rc_joy.ch2=joy_msg->axes[1];
@@ -108,11 +108,11 @@ void  rc_joy_callback(const sensor_msgs::Joy::ConstPtr& joy_msg)
 	rc_joy.sw2=joy_msg->buttons[1];	
 	rc_joy.update =1;
 	rc_joy.cnt++;
-
+	
 	if(rc_joy.sw1 == 1)
 	{
-		motion_cmd_para.v = rc_joy.ch1;
-		motion_cmd_para.w = rc_joy.ch2;
+		motion_cmd_para.v = rc_joy.ch2;
+		motion_cmd_para.w = -rc_joy.ch1;
 		motion_cmd_para.motion_state = 1;  // 0 带缓冲滑行尽快的停止    1 設置速度    2 急停  
  		write_motion_cmd(motion_cmd_para);
 	}
@@ -129,8 +129,8 @@ int main(int argc, char **argv)
 
 	nh_.param<int>("enable_ultra_brake", enable_ultra_brake, 0);
 	nh_.param<int>("min_distance_ultra", min_distance_ultra, 15);
-	nh_.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "/rc_remote/joy");
-	nh_.param<std::string>("sub_joy_topic", sub_joy_topic, "/4ws4wd/cmd_vel");
+	nh_.param<std::string>("sub_joy_topic", sub_joy_topic, "/rc_remotes/joy");
+	nh_.param<std::string>("sub_cmdvel_topic",sub_cmdvel_topic, "/4ws4wd/cmd_vel");
  	nh_.param<std::string>("pub_odom_topic", pub_odom_topic, "/4ws4wd/odom");
 	nh_.param<std::string>("pub_path_topic", pub_path_topic, "/4ws4wd/path");
 	nh_.param<std::string>("pub_ultra_topic", pub_ultra_topic, "/4ws4wd/ultrasonic");
@@ -139,8 +139,8 @@ int main(int argc, char **argv)
 	ROS_INFO_STREAM("min_distance_ultra:   " << min_distance_ultra);
 
 	//ros::Subscriber user_point_sub_;
-	ros::Subscriber joy_sub = nh_.subscribe(sub_joy_topic, 10, rc_joy_callback);
-	ros::Subscriber command_sub = nh_.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
+	ros::Subscriber joy_sub = nh_.subscribe(sub_joy_topic, 50, rc_joy_callback);
+	ros::Subscriber command_sub = nh_.subscribe(sub_cmdvel_topic, 50, cmd_vel_callback);
 	odom_pub= nh_.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
 	path_pub = nh_.advertise<nav_msgs::Path>(pub_path_topic,20, true);
     ultra_pub = nh_.advertise<gsy4ws4wd_bringup::ultrasonic>(pub_ultra_topic, 10);
