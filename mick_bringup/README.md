@@ -1,39 +1,75 @@
-# mick_robot_bringup
-该代码为麦克纳姆轮ROS底盘的ROS节点，与mick_robot_chasiss代码配合使用，更多的信息可以参考博客地址：https://blog.csdn.net/crp997576280/article/details/102026459
-### V1.1 修改日志
-  １．修改了ROS serial库参数，使得串口读取数据帧更加稳定
+#### 环境说明
 
-  ２．增加节点启动时候清零里程计的指令
+##### 该节点使用的是ROS2的Galactic版本，使用鱼香ROS的一键安装，按照步骤来即可
 
-  ３．修复了里程计掉头以后由于方向原因使得位置估算错误的BUG
+```
+wget http://fishros.com/install -O fishros && . fishros
+```
 
-  ４．增加了参数传递功能，可通过launch文件传递参数
+##### 接着需要安装NAV2的包（可能需要单独安装，以防万一）
 
-### Ｖ1.0 修改日志
-  第一次提交
+```
+ sudo apt install ros-galactic-nav2-*
+```
 
-# 下载安装
- 1.安装依赖项
+##### ~~然关于ROS2串口驱动的安装，参考CSDN的一篇文章 [ROS2 Serial串口驱动](https://blog.csdn.net/zardforever123/article/details/134227412)~~
 
-    sudo apt-get install ros-kinetic-serial
+~~但是由于ROS2没有再封装串口库serial，因此需要手动安装serial：~~
 
- 2. cd catkin_ws/src
+```
+git clone https://github.com/ZhaoXiangBox/serial
+cd serial && mkdir build
+cmake .. && make
+sudo make install
+```
 
- 3.  git clone  https://github.com/RuPingCen/mick_robot_bringup.git
 
- 4. catkin_make
+#####  编译运行
 
-# 参数说明
+1. 下载代码
+    ```
+    mick_bringup 
+    ```
 
-sub_cmdvel_topic(接收话题名称)
+2. 返回到工作空间主目录，使用colcon build进行编译:
+    ```
+    cd ros2_ws
+    colcon build
+    ```
+    
+3. 在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
+    ```
+    sudo chmod 777 /dev/ttyUSB0
+    ```
 
-pub_odom_topic（里程计发布话题名称）
+4. 最后在编译无报错之后就可以运行了:
 
-dev（串口设备名称）
+    ```
+    sourse install/setup.bash
+    ros2 run mick_bringup mick_node_test
+    ```
 
-baud（串口波特率）
 
-hz（里程计发布频率）
 
-chassis_type（底盘类型选择） **0**： 表示差速底盘 **1**：表示 麦克纳姆轮底盘  **2**：4WS4WD移动底盘  **3**： 阿卡曼转向底盘
+# 通过命令行控制小车
 
+可以将小车垫高，随后在命令行终端里输入以下指令：
+
+```
+ros2 topic pub -r 100 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 1.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+```
+
+
+
+## 键盘控制小车底盘
+
+底盘代码包中包含一个键盘控制节点，  'w' 'x' 'a' 'd' 's' 分别表示前 后 左 右 停止。
+
+```
+sourse install/setup.bash
+ros2 run keyboard keyboard
+```
+
+
+
+ 
