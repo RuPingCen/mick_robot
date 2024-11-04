@@ -21,7 +21,7 @@ gtkterm
 
 <img src="README.assets\gtk2.png" style="zoom:67%;" />
 
-<img src="README.assets\gtk3.gif"  />
+<img src="README.assets\gtk3.gif" style="zoom: 80%;" />
 
 这样，就表示能够成功的收到小车底盘上传的数据。
 
@@ -41,7 +41,7 @@ ros2 launch slam_gmapping slam_gmapping.launch.py
 
 接着我们依旧添加一些topic和type：
 
-![](README.assets\gmap.png)
+<img src="README.assets\gmap.png" style="zoom: 100%;" />
 
 在map的topic中选中/map话题，接着我们就可以看见成功的建图了：
 
@@ -49,7 +49,7 @@ ros2 launch slam_gmapping slam_gmapping.launch.py
 
 我们接下来就可以移动小车对实际的物理环境进行建图了
 
-![](README.assets\gmap2.gif)
+<img src="README.assets\gmap2.gif" style="zoom: 100%;" />
 
 建好图后再使用map_server进行保存
 
@@ -97,11 +97,9 @@ auto mapCallback = [&prom](
 ros2 run nav2_map_server map_saver_cli
 ```
 
-![](README.assets\map_server.png)
+<img src="README.assets\map_server.png" style="zoom: 100%;" />
 
-这样我们就将建好的地图保存好了，目录就是新建的ros2_ws/map/map_learn
-
-![](README.assets\map_server1.png)
+<img src="README.assets\map_server1.png" style="zoom: 100%;" />
 
 其中有.pgm和.yaml文件，后续导航需要用到.yaml文件
 
@@ -109,7 +107,7 @@ ros2 run nav2_map_server map_saver_cli
 
 需要注意的是，建图过程中需要避免玻璃和电梯门等穿透性、高反射性地物体，它们会影响建图的质量
 
-![](README.assets\map_server2.png)
+<img src="README.assets\map_server2.png" style="zoom: 80%;" />
 
 这是一个建好并保存好的地图示例
 
