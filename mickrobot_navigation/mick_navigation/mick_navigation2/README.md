@@ -113,4 +113,4 @@ rviz2 -d /home/mickrobot/ros2_ws/src/navigation2/rviz/navigation2.rviz
 ```
 bash mick_nav2.sh
 ```
-
+不过使用脚本需要修改其中的部分语句
