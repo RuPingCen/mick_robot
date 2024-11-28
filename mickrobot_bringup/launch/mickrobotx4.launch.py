@@ -18,7 +18,25 @@ def generate_launch_description():
                 {'pub_imu_topic': 'mickrobot/Imu'},
                 {'joy_topic': 'mickrobot/rc_remotes/joy'} 
             ]
-        )
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_footprint2base_link',
+            arguments=['0.0', '0.0', '0.15', '0.0', '0.0', '0.0', 'base_footprint','base_link']
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_link2laser_link',
+            arguments=['0.07', '0.0', '0.0', '0.0', '0.0', '0.0', 'base_link', 'laser']
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_link2imu',
+            arguments=['0.1653', '0.0', '0.0', '0.0', '0.0', '0.0', 'base_link', 'imu_node']
+        ),
     ])
 
  

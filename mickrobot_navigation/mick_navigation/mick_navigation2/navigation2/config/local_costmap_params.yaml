@@ -1,0 +1,29 @@
+local_costmap:
+  ros__parameters:
+    footprint: [[-0.3, -0.8], [-0.35, 0], [0.9, 0.8], [0.5, -0.8]]
+    footprint_padding: 0.01
+    transform_tolerance: 0.5
+    update_frequency: 5.0
+    publish_frequency: 2.0
+
+    global_frame: map
+    robot_base_frame: base_footprint
+    resolution: 0.1
+
+    rolling_window: true
+    width: 0.3
+    height: 0.1
+
+    track_unknown_space: false
+
+    plugins:
+      - {name: sensor, type: "costmap_2d::ObstacleLayer"}
+      - {name: inflation, type: "costmap_2d::InflationLayer"}
+
+    sensor:
+      observation_sources: laser_scan_sensor
+      laser_scan_sensor: {sensor_frame: laser_link, data_type: LaserScan, topic: scan, marking: true, clearing: true}
+
+    inflation:
+      inflation_radius: 0.22  # 0.22
+      cost_scaling_factor: 12.0  # 22.0
