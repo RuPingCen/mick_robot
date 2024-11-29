@@ -23,7 +23,7 @@ ros2 launch sllidar_ros2 sllidar_a2m7_launch.py
 (3).IMU
 
 ```
-ros2 launch mick_imu_node imu_100D2.launch.py
+ros2 launch mick_imu_node imu_100D4.launch.py
 ```
 
 (4).TF变换

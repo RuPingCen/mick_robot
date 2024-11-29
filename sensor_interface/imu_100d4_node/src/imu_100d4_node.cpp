@@ -18,6 +18,9 @@ using namespace std::chrono_literals;
 static const uint8_t stop[6] = {0xA5, 0x5A, 0x04, 0x02, 0x06, 0xAA};
 static const uint8_t mode[6] = {0xA5, 0x5A, 0x04, 0x01, 0x05, 0xAA};
 
+static const uint8_t magnetic_correct_start[6] = {0xA5, 0x5A, 0x04, 0xE2, 0xE6, 0xAA};
+static const uint8_t magnetic_correct_stop[6] = {0xA5, 0x5A, 0x04, 0xE4, 0xE8, 0xAA};
+
 // 使用 std::array 替代裸数组
 static std::array<uint8_t, 200> data_raw;
 static std::string frame_id;
@@ -40,7 +43,7 @@ public:
         declare_parameter<std::string>("frame_id", "imu");
         declare_parameter<double>("delay", 0.0);
         declare_parameter<double>("gravity", 9.81);
-
+        declare_parameter<int>("use_magnetic", 0);
 
         port_ = get_parameter("port").as_string();
         model_ = get_parameter("model").as_string();
@@ -48,6 +51,7 @@ public:
         frame_id_ = get_parameter("frame_id").as_string();
         delay_ = get_parameter("delay").as_double();
         gravity_ = get_parameter("gravity").as_double();
+        use_magnetic_ = get_parameter("use_magnetic").as_int();
 
         io_service_ = std::make_shared<boost::asio::io_service>();
         serial_port_ = std::make_shared<boost::asio::serial_port>(*io_service_);
@@ -89,8 +93,19 @@ public:
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
         // 根据型号发送初始化命令
-        if (model_ == "100D4")
+        if (model_ == "100D4" ||model_ == "100D2" )
         {
+            if(use_magnetic_)
+            {
+                boost::asio::write(*serial_port_, boost::asio::buffer(magnetic_correct_start, sizeof(magnetic_correct_start)));
+                std::this_thread::sleep_for(1000ms);     
+            }
+            else
+            {
+                boost::asio::write(*serial_port_, boost::asio::buffer(magnetic_correct_start, sizeof(magnetic_correct_stop)));
+                std::this_thread::sleep_for(1000ms);     
+            }
+ 
             boost::asio::write(*serial_port_, boost::asio::buffer(stop, sizeof(stop)));
             std::this_thread::sleep_for(1000ms);
             boost::asio::write(*serial_port_, boost::asio::buffer(mode, sizeof(mode)));
@@ -269,6 +284,7 @@ void publishTransform(const rclcpp::Time &stamp, const sensor_msgs::msg::Imu &im
     std::string model_;
     int baud_;
     double gravity_;
+    int use_magnetic_;
     std::string frame_id_;
     double delay_;
     std::shared_ptr<boost::asio::io_service> io_service_;

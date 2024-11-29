@@ -10,8 +10,10 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'port': '/dev/ttyUSB2'},
-                {'model': '100D2'},
-                {'baud': 115200}
+                {'model': '100D4'},
+                {'baud': 115200},
+                {'gravity': 9.81},
+                {'use_magnetic': 0}
             ]
         )
     ])
