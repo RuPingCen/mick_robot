@@ -34,17 +34,20 @@ public:
         : Node("imu_node"), data_length_(0)
     {
         // 参数声明和获取
-        declare_parameter<std::string>("port", "/dev/ttyUSB2");
-        declare_parameter<std::string>("model", "100D2");
+        declare_parameter<std::string>("port", "/dev/ttyUSB0");
+        declare_parameter<std::string>("model", "100D4");
         declare_parameter<int>("baud", 115200);
-        declare_parameter<std::string>("frame_id", "imu_node");
+        declare_parameter<std::string>("frame_id", "imu");
         declare_parameter<double>("delay", 0.0);
+        declare_parameter<double>("gravity", 9.81);
+
 
         port_ = get_parameter("port").as_string();
         model_ = get_parameter("model").as_string();
         baud_ = get_parameter("baud").as_int();
         frame_id_ = get_parameter("frame_id").as_string();
         delay_ = get_parameter("delay").as_double();
+        gravity_ = get_parameter("gravity").as_double();
 
         io_service_ = std::make_shared<boost::asio::io_service>();
         serial_port_ = std::make_shared<boost::asio::serial_port>(*io_service_);
@@ -78,15 +81,15 @@ public:
         serial_port_->set_option(stop_bits);
 
         // 发布者初始化
-        pub_imu_ = create_publisher<sensor_msgs::msg::Imu>("imu_node", 1);
-        pub_mag_ = create_publisher<sensor_msgs::msg::MagneticField>("mag", 1);
-        pub_gps_ = create_publisher<sensor_msgs::msg::NavSatFix>("gps", 1);
+        pub_imu_ = create_publisher<sensor_msgs::msg::Imu>("/imu_100d4/imu_data", 1);
+        pub_mag_ = create_publisher<sensor_msgs::msg::MagneticField>("/imu_100d4/mag", 1);
+        //pub_gps_ = create_publisher<sensor_msgs::msg::NavSatFix>("/100d4/gps", 1);
 
         // TF广播器初始化
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
         // 根据型号发送初始化命令
-        if (model_ == "100D2")
+        if (model_ == "100D4")
         {
             boost::asio::write(*serial_port_, boost::asio::buffer(stop, sizeof(stop)));
             std::this_thread::sleep_for(1000ms);
@@ -129,18 +132,18 @@ void readData()
     std::copy(tmp.begin(), tmp.begin() + bytes_read, data_raw.begin());
 
     // 输出读取的数据以进行调试
-    RCLCPP_INFO(this->get_logger(), "Read %zu bytes", bytes_read);
-    for (size_t i = 0; i < bytes_read; ++i)
-    {
-        RCLCPP_INFO(this->get_logger(), "Data[%zu]: 0x%02X", i, data_raw[i]);
-    }
+    // RCLCPP_INFO(this->get_logger(), "Read %zu bytes", bytes_read);
+    // for (size_t i = 0; i < bytes_read; ++i)
+    // {
+    //     RCLCPP_INFO(this->get_logger(), "Data[%zu]: 0x%02X", i, data_raw[i]);
+    // }
 
     bool found = false;
     sensor_msgs::msg::Imu imu_msg;  // 在这里声明 imu_msg
 
     for (size_t kk = 0; kk < bytes_read - 1; ++kk) 
     {
-        if (model_ == "100D2" && data_raw[kk] == 0xA5 && data_raw[kk + 1] == 0x5A)
+        if (model_ == "100D4" && data_raw[kk] == 0xA5 && data_raw[kk + 1] == 0x5A)
         {
             unsigned char *data = data_raw.data() + kk;
             uint8_t data_length = data[2];
@@ -183,34 +186,43 @@ void readData()
 
 
 
-    void publishImuData(unsigned char *data, uint8_t data_length, sensor_msgs::msg::Imu &imu_msg) {
+void publishImuData(unsigned char *data, uint8_t data_length, sensor_msgs::msg::Imu &imu_msg) 
+{
     // 填充IMU数据
+    float yaw,pitch,roll;
     imu_msg.header.stamp = this->now();
     imu_msg.header.frame_id = frame_id_;
 
-                  Eigen::Vector3d ea0(-d2f_euler(data + 3) * M_PI / 180.0,
-                                  d2f_euler(data + 7) * M_PI / 180.0,
-                                  d2f_euler(data + 5) * M_PI / 180.0);
-              Eigen::Matrix3d R;
-              R = Eigen::AngleAxisd(ea0[0], ::Eigen::Vector3d::UnitZ())
-                  * Eigen::AngleAxisd(ea0[1], ::Eigen::Vector3d::UnitY())
-                  * Eigen::AngleAxisd(ea0[2], ::Eigen::Vector3d::UnitX());
-              Eigen::Quaterniond q;
-              q = R;
-              imu_msg.orientation.w = (double)q.w();
-              imu_msg.orientation.x = (double)q.x();
-              imu_msg.orientation.y = (double)q.y();
-              imu_msg.orientation.z = (double)q.z();
+    // 映射到东北天坐标系
+    yaw = -d2f_euler(data + 3) * M_PI / 180.0;
+    pitch = -d2f_euler(data + 7) * M_PI / 180.0;
+    roll = -d2f_euler(data + 5) * M_PI / 180.0;
+
+    Eigen::Vector3d ea0(yaw,pitch,roll);
+
+    RCLCPP_INFO(this->get_logger(), "yaw:%3f \t pitch:%3f\t roll:%3f\n",yaw*57.3f,pitch*57.3f,roll*57.3f);
+    
+    Eigen::Matrix3d R;
+    R = Eigen::AngleAxisd(ea0[0], ::Eigen::Vector3d::UnitZ())
+        * Eigen::AngleAxisd(ea0[1], ::Eigen::Vector3d::UnitY())
+        * Eigen::AngleAxisd(ea0[2], ::Eigen::Vector3d::UnitX());
+    Eigen::Quaterniond q;
+    q = R;
+    imu_msg.orientation.w = (double)q.w();
+    imu_msg.orientation.x = (double)q.x();
+    imu_msg.orientation.y = (double)q.y();
+    imu_msg.orientation.z = (double)q.z();
         
     // 填充IMU数据
-    imu_msg.angular_velocity.x = d2f_gyro(data + 15);
-    imu_msg.angular_velocity.y = d2f_gyro(data + 17);
+    // 与Xsens IMU 对应， 将三驰IMU 投影到东北天坐标系
+    imu_msg.angular_velocity.x = -d2f_gyro(data + 15);
+    imu_msg.angular_velocity.y = -d2f_gyro(data + 17);
     imu_msg.angular_velocity.z = d2f_gyro(data + 19);
-    imu_msg.linear_acceleration.x = d2f_acc(data + 9) * 9.81;
-    imu_msg.linear_acceleration.y = d2f_acc(data + 11) * 9.81;
-    imu_msg.linear_acceleration.z = d2f_acc(data + 13) * 9.81;
-	
-      
+
+    imu_msg.linear_acceleration.x = -d2f_acc(data + 9) * gravity_;
+    imu_msg.linear_acceleration.y = -d2f_acc(data + 11) * gravity_;
+    imu_msg.linear_acceleration.z = d2f_acc(data + 13) * gravity_;
+        
     pub_imu_->publish(imu_msg);
 }
 
@@ -256,6 +268,7 @@ void publishTransform(const rclcpp::Time &stamp, const sensor_msgs::msg::Imu &im
     std::string port_;
     std::string model_;
     int baud_;
+    double gravity_;
     std::string frame_id_;
     double delay_;
     std::shared_ptr<boost::asio::io_service> io_service_;
