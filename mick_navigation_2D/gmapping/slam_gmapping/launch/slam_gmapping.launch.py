@@ -38,26 +38,26 @@ def generate_launch_description():
             output='screen',
             arguments=['-d', rviz_config_file]
         ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='static_transform_publisher',
-            arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link']
-        ),
-         Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='static_transform_publisher',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'laser'],
-            output='screen'
-        ),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     name='static_transform_publisher',
+        #     arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link']
+        # ),
+        #  Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     name='static_transform_publisher',
+        #     arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'laser'],
+        #     output='screen'
+        # ),
 
-         Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='static_transform_publisher',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'imu_node'],
-            output='screen'
-        ),
+        #  Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     name='static_transform_publisher',
+        #     arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'imu_node'],
+        #     output='screen'
+        # ),
     ])
 

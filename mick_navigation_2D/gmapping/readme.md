@@ -26,7 +26,7 @@ ros2 launch mickrobot_bringup mickrobotx4.launch.py
 这样，就表示能够成功的收到小车底盘上传的数据。
 
 # 2. 启动雷达
-
+## 2.1 思岚A2M7
 然后我们启动雷达和gmapping的启动文件，
 
 ```
@@ -36,6 +36,12 @@ ros2 launch sllidar_ros2 sllidar_a2m7_launch.py
 
 通常激光雷达成功启动以后会一直旋转。
 
+## 2.2 MS200激光雷达
+
+```
+ros2 launch oradar_lidar ms200_scan_view.launch.py  
+
+```
 # 3. 启动gmapping建图节点
 
 打开另一终端
