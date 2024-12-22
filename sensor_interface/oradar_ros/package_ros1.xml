@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>oradar_lidar</name>
+  <version>1.0.0</version>
+  <description>ROS driver for Oradar's newer generation of mechanical 2D LiDARs</description>
+  <maintainer email="jiasiting@oradar.com.cn">Oradar</maintainer>
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>BSD</license>
+
+  <url type="website">www.orbbec.com.cn</url> 
+  <author email="jiasiting@oradar.com.cn">jiasiting</author>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rosconsole</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <depend>std_msgs</depend>
+
+  <build_export_depend>rosconsole</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>message_runtime</build_export_depend>
+
+  <exec_depend>rosconsole</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

@@ -402,9 +402,9 @@ bool analy_uart_recive_data(std::string& str_data)
 				mick_chassis.odom_measurements.wz = odom.int16_dat/1000.0f;
 				 
 				mick_chassis.odom_measurements.available = 0x01;
-				//printf("odom: %f\t%f\t%f\n",mick_chassis.odom_measurements.vx,
-				//							mick_chassis.odom_measurements.vy,
-				//							mick_chassis.odom_measurements.wz);
+				printf("odom: %f\t%f\t%f\n",mick_chassis.odom_measurements.vx,
+											mick_chassis.odom_measurements.vy,
+											mick_chassis.odom_measurements.wz);
 			}
 			else if (reviced_tem[3+step] ==0xA0 ) // IMU 数据
 			{

@@ -9,7 +9,7 @@ def generate_launch_description():
             name='mickrobot_bringup',
             output='screen',
             parameters=[
-                {'dev': '/dev/ttyUSB0'},
+                {'dev': '/dev/ttyUSB2'},
                 {'baud': 115200},
                 {'chassis_type': 0},
                 {'is_pub_path': 0},

@@ -1,0 +1,19 @@
+<launch>
+  <node pkg="oradar_lidar" type="oradar_scan" name="oradar_scan" respawn="false" output="screen">
+
+    <param name="device_model" type="string"   value="MS200"/>				<!--设备型号: MS200-->
+    <param name="frame_id"     type="string"   value="laser_frame"/>  <!--配置frame_id-->
+    <param name="scan_topic"   type="string"   value="MS200/scan" />  <!--设置激光雷达的topic名称--> 
+    <param name="port_name"    type="string"   value="/dev/ttyACM0"/> <!--配置串口设备port: dev/ttyACM0-->
+    <param name="baudrate"     type="int"      value="230400"/>		    <!--配置串口波特率:230400-->
+    <param name="angle_min"    type="double"   value="0.0" /> 	      <!--设置最小角度，单位度.取值范围[0,360].default=0.0-->
+    <param name="angle_max"    type="double"   value="360.0"/>   	    <!--设置最大角度，单位度.取值范围[0,360].default=360.0-->
+    <param name="range_min"    type="double"   value="0.05" />    	  <!--设置最小距离，单位米，default=0.05-->
+    <param name="range_max"    type="double"   value="20.0" />    	  <!--设置最大距离，单位米，default=20.0-->
+    <param name="clockwise"    type="bool"     value="false"/>    	  <!--配置点云方向，true为顺时针， false为逆时针-->
+    <param name="motor_speed"  type="int"      value="10" />      	  <!--配置motor转速.default=10Hz, 取值范围5~15Hz-->
+  
+  </node>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find oradar_lidar)/rviz/oradar_scan.rviz" />
+</launch>

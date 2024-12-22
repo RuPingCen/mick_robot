@@ -1,0 +1,33 @@
+slam_gmapping:
+  ros__parameters:
+    base_frame: "base_link"
+    map_frame: "map"
+    odom_frame: "odom"
+    maxUrange: 15.0
+    maxRange: 0.0
+    sigma: 0.05
+    kernelSize: 1
+    lstep: 0.05
+    astep: 0.05
+    iterations: 10
+    lsigma: 0.075
+    ogain: 3.0
+    lskip: 0
+    srr: 0.1
+    srt: 0.2
+    str: 0.1
+    stt: 0.2
+    linearUpdate: 0.5
+    angularUpdate: 0.25
+    temporalUpdate: 0.5
+    resampleThreshold: 0.3
+    particles: 30
+    xmin: -10.0
+    ymin: -10.0
+    xmax: 10.0
+    ymax: 10.0
+    delta: 0.05
+    llsamplerange: 0.005
+    llsamplestep: 0.005
+    lasamplerange: 0.0025
+    lasamplestep: 0.0025

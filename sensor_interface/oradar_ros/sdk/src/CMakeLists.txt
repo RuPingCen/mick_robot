@@ -1,0 +1,13 @@
+include_directories(..)
+include_directories(.)
+aux_include_directory(. HDRS)
+aux_source_directory(. SRCS)
+add_to_oradar_headers(${HDRS})
+add_to_oradar_sources(${SRCS})
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR})
+subdirlist(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
+foreach(subdir ${SUBDIRS})
+    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${subdir} )
+    add_subdirectory(${subdir})
+endforeach()

@@ -1,0 +1,11 @@
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+aux_include_directory(. HDRS)
+aux_source_directory(. SRCS)
+add_to_oradar_headers(${HDRS})
+add_to_oradar_sources(${SRCS})
+
+IF (WIN32)
+add_to_oradar_libraries(Winmm)
+ELSE()                   
+add_to_oradar_libraries(pthread)
+ENDIF()                                      
