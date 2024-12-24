@@ -27,7 +27,7 @@ def generate_launch_description():
     # 配置文件夹路径
     configuration_directory = LaunchConfiguration('configuration_directory',default= os.path.join(pkg_share, 'config') )
     # 配置文件
-    configuration_basename = LaunchConfiguration('configuration_basename', default='mickrobot.lua')
+    configuration_basename = LaunchConfiguration('configuration_basename', default='test.lua')
 
     
     #=====================声明三个节点，cartographer/occupancy_grid_node/rviz_node=================================
@@ -37,6 +37,7 @@ def generate_launch_description():
         name='cartographer_node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
+        remappings=[('/scan', '/scan'),],
         arguments=['-configuration_directory', configuration_directory,
                    '-configuration_basename', configuration_basename])
 
@@ -56,18 +57,19 @@ def generate_launch_description():
         arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'laser'],
         output='screen'
         )
+    
     start_robot_state_publisher_cmd_1 =  Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_transform_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint'],
         output='screen'
         )
     start_robot_state_publisher_cmd_2 =  Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_transform_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'imu_link'],
         output='screen'
         )
                 
@@ -79,10 +81,7 @@ def generate_launch_description():
         arguments=['-d', rviz_config_file],
         parameters=[{'use_sim_time': use_sim_time}],
         output='screen')
-                     
-        
-        
-        
+                            
 
     #===============================================定义启动文件========================================================
     ld = LaunchDescription()

@@ -4,6 +4,7 @@
 sudo apt install ros-$ROS_DISTRO-navigation2
 sudo apt install ros-$ROS_DISTRO-nav2-bringup
 sudo apt install ros-$ROS_DISTRO-robot-localization
+sudo apt install ros-$ROS_DISTRO-robot-localization
 ```
 
 2.按顺序启动
@@ -32,7 +33,7 @@ ros2 launch mick_imu_node imu_100D4.launch.py
 ros2 launch odom_tf odom.launch.py
 ```
 
-[这里使用的是odom_tf功能包]
+[这里使用的是odom_tf功能包]  
 
 (5).EKF
 

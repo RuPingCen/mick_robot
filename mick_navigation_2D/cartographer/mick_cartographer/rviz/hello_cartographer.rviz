@@ -5,9 +5,14 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
         - /TF1/Frames1
+        - /TF1/Tree1
+        - /TF1/Tree1/map1
         - /LaserScan1
+        - /Navigation1
         - /Cartographer1
+        - /Cartographer1/scan_matched_points21
       Splitter Ratio: 0.5794117450714111
     Tree Height: 785
   - Class: rviz_common/Selection
@@ -53,27 +58,13 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
-        base_scan:
+        imu_node:
           Value: true
-        camera_link:
-          Value: true
-        camera_rgb_frame:
-          Value: true
-        camera_rgb_optical_frame:
-          Value: true
-        caster_back_left_link:
-          Value: true
-        caster_back_right_link:
-          Value: true
-        imu_link:
+        laser:
           Value: true
         map:
           Value: true
         odom:
-          Value: true
-        wheel_left_link:
-          Value: true
-        wheel_right_link:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -82,25 +73,13 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          odom:
+          base_link:
             base_footprint:
-              base_link:
-                base_scan:
-                  {}
-                camera_link:
-                  camera_rgb_frame:
-                    camera_rgb_optical_frame:
-                      {}
-                caster_back_left_link:
-                  {}
-                caster_back_right_link:
-                  {}
-                imu_link:
-                  {}
-                wheel_left_link:
-                  {}
-                wheel_right_link:
-                  {}
+              {}
+            imu_node:
+              {}
+            laser:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -113,7 +92,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: ""
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -122,7 +101,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
-      Position Transformer: XYZ
+      Position Transformer: ""
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.019999999552965164
@@ -130,6 +109,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /scan
@@ -170,6 +150,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /odom
@@ -183,6 +164,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /map
@@ -207,6 +189,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
+                Filter size: 10
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /global_costmap/costmap
@@ -241,6 +224,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
+                Filter size: 10
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /global_plan
@@ -257,6 +241,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
+                Filter size: 10
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /local_costmap/footprint
@@ -270,6 +255,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
+                Filter size: 10
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /local_costmap/costmap
@@ -304,6 +290,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
+                Filter size: 10
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /local_plan
@@ -326,6 +313,7 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
+            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /particlecloud
@@ -361,6 +349,7 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
+            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /scan_matched_points2
@@ -368,17 +357,17 @@ Visualization Manager:
           Use rainbow: true
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Trajectories
           Namespaces:
-            {}
+            Trajectory 0: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /trajectory_node_list
-          Value: false
+          Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
           Name: Constraints
@@ -392,7 +381,7 @@ Visualization Manager:
             Value: /constraint_list
           Value: false
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Landmark Poses
           Namespaces:
             {}
@@ -402,7 +391,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /landmark_poses_list
-          Value: false
+          Value: true
       Enabled: true
       Name: Cartographer
   Enabled: true
@@ -433,6 +422,9 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /clicked_point
     - Class: rviz_default_plugins/SetInitialPose
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -446,7 +438,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 6.2725830078125
+      Distance: 38.8124885559082
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -461,10 +453,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.17479735612869263
+      Pitch: 1.3297966718673706
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.795415163040161
+      Yaw: 2.1354100704193115
     Saved: ~
 Window Geometry:
   Displays:
