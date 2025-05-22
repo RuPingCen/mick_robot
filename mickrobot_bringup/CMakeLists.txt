@@ -41,7 +41,9 @@ endif()
 #  tf2_geometry_msgs
 #  serial
 #)
+
 add_executable(mickrobot_bringup src/mickx4_bringup_v3.1.cpp  src/mick_chassis_protocol.cpp)
+#add_executable(mickrobot_bringup src/mickx4_bringup_v3.cpp)
   
 ament_target_dependencies(mickrobot_bringup 
   rclcpp 

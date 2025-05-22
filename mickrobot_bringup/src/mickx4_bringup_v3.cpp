@@ -28,7 +28,6 @@
 #include "sys/time.h"
 
 #include "mick_chassis_msg.h"
-#include "mick_chassis_protocol.hpp"
 
 
 
@@ -39,21 +38,33 @@ using namespace std;
 int chassis_type = 0; //默认采用差速模式  0：差速  1-麦克纳姆轮  2: Ackermann  3:4WS4WD
 int is_pub_path = 0; //默认不发布小车底盘轨迹  0：不发布   1 发布
 
+float WHEEL_RATIO =19.0; 		// 麦克纳母轮模式 减速比 3508电机减速比为1:19
+float WHEEL_K=0.355;            // 麦克纳母轮模式
+
+float WHEEL_L=0.4;                 //左右轮子的间距
+float WHEEL_D=0.17; 	   	//轮子直径  6.5寸的轮子
+float WHEEL_R=WHEEL_D/2.0; 			//轮子半径
+float WHEEL_PI=3.141693; 			//pi
+
+
 nav_msgs::msg::Path path;
 serial::Serial ros_ser;
 
 
-
+volatile rc_info_t rc;
 int rc_init_flags =0;
 unsigned int init_times = 0;
 int sum_offset[4] = {0};
 int show_message =1;
 float RC_MIN = 0, RC_MAX = 2500, RC_K = 1; //遥控器摇杆通道输出的最小值、最大值、比例系数
 
+moto_measure_t moto_chassis[4] = {0};
+moto_measure_t moto_rmd_chassis[4] = {0};
+chassis_measure_t mickv3_chassis;
 
-chassis_measure_t mick_chassis;
-
- 
+imu_measure_t imu_chassis;  //IMU 数据
+//uint16_t Ultrasonic_data [10];   //超声波数据
+vector<uint16_t> Ultrasonic_data(10,0);
 
 union INT32Data //union的作用为实现char数组和int32之间的转换
 {
@@ -70,9 +81,16 @@ union Int16Data //union的作用为实现char数组和int16数据类型之间的
 
 
 
-void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+ void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+void send_speed_to_X4chassis(float x,float y,float w);
+void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
+void send_speed_to_4WS4WDchassis(float x,float y,float w );
+void send_speed_to_Ackerchassis(float x,float w );
 
-bool analy_uart_recive_data(std::string& str_data,
+void send_rpm_to_4WS4WDchassis(const rclcpp::Node::SharedPtr node,vector<float> vw);
+
+void clear_odometry_chassis(void);
+bool analy_uart_recive_data(std_msgs::msg::String serial_data,
 								rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub);
 void calculate_position_for_odometry(void);
 void calculate_chassisDiffX4_position_for_odometry(rclcpp::Node::SharedPtr node,
@@ -108,42 +126,42 @@ int main(int argc, char ** argv)
     int hz = 100;
  
 
-  rclcpp::init(argc,argv);
+    rclcpp::init(argc,argv);
 
-  auto node = std::make_shared<rclcpp::Node>("mick_robot");
+    auto node = std::make_shared<rclcpp::Node>("mick_robot");
 
-  node->declare_parameter<std::string>("sub_cmdvel_topic",sub_cmdvel_topic);
-  node->declare_parameter<std::string>("pub_odom_topic",pub_odom_topic);
-  node->declare_parameter<std::string>("pub_imu_topic",pub_imu_topic);
-  node->declare_parameter<std::string>("dev",dev);
+    node->declare_parameter<std::string>("sub_cmdvel_topic",sub_cmdvel_topic);
+    node->declare_parameter<std::string>("pub_odom_topic",pub_odom_topic);
+    node->declare_parameter<std::string>("pub_imu_topic",pub_imu_topic);
+    node->declare_parameter<std::string>("dev",dev);
 
-  node->declare_parameter<int>("baud",baud);
-  node->declare_parameter<int>("time_out",time_out);
-  node->declare_parameter<int>("hz",hz);
-  node->declare_parameter<int>("is_pub_path",is_pub_path);
-  node->declare_parameter<int>("chassis_type",chassis_type);
+    node->declare_parameter<int>("baud",baud);
+    node->declare_parameter<int>("time_out",time_out);
+    node->declare_parameter<int>("hz",hz);
+    node->declare_parameter<int>("is_pub_path",is_pub_path);
+    node->declare_parameter<int>("chassis_type",chassis_type);
 
-  node->declare_parameter<std::string>("joy_topic",joy_topic);
-  node->declare_parameter<float>("RC_K",RC_K);
-  node->declare_parameter<float>("RC_MIN",RC_MIN);
-  node->declare_parameter<float>("RC_MAX",RC_MAX);
+    node->declare_parameter<std::string>("joy_topic",joy_topic);
+    node->declare_parameter<float>("RC_K",RC_K);
+    node->declare_parameter<float>("RC_MIN",RC_MIN);
+    node->declare_parameter<float>("RC_MAX",RC_MAX);
 
-  RCLCPP_INFO_STREAM(node->get_logger(),"sub_cmdvel_topic:   "<<sub_cmdvel_topic);
-  RCLCPP_INFO_STREAM(node->get_logger(),"pub_odom_topic:   "<<pub_odom_topic);
-  RCLCPP_INFO_STREAM(node->get_logger(),"pub_imu_topic:   "<<pub_imu_topic);
+	RCLCPP_INFO_STREAM(node->get_logger(),"sub_cmdvel_topic:   "<<sub_cmdvel_topic);
+	RCLCPP_INFO_STREAM(node->get_logger(),"pub_odom_topic:   "<<pub_odom_topic);
+	RCLCPP_INFO_STREAM(node->get_logger(),"pub_imu_topic:   "<<pub_imu_topic);
+ 
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_K:   " << RC_K);
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_MIN:   " << RC_MIN);
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_MAX:   " << RC_MAX);
 
-  RCLCPP_INFO_STREAM(node->get_logger(),"RC_K:   " << RC_K);
-  RCLCPP_INFO_STREAM(node->get_logger(),"RC_MIN:   " << RC_MIN);
-  RCLCPP_INFO_STREAM(node->get_logger(),"RC_MAX:   " << RC_MAX);
+	auto command_sub = node->create_subscription<geometry_msgs::msg::Twist>(sub_cmdvel_topic, 10, cmd_vel_callback);
 
-  auto command_sub = node->create_subscription<geometry_msgs::msg::Twist>(sub_cmdvel_topic, 10, cmd_vel_callback);
+    auto joy_pub = node->create_publisher<sensor_msgs::msg::Joy>(joy_topic,20);
+    auto imu_pub = node->create_publisher<sensor_msgs::msg::Imu>(pub_imu_topic,rclcpp::QoS(20).transient_local());
+    auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>(pub_odom_topic,20);
+    auto path_pub = node->create_publisher<nav_msgs::msg::Path>(pub_odom_topic+"/path",rclcpp::QoS(20).transient_local());
 
-  auto joy_pub = node->create_publisher<sensor_msgs::msg::Joy>(joy_topic,20);
-  auto imu_pub = node->create_publisher<sensor_msgs::msg::Imu>(pub_imu_topic,rclcpp::QoS(20).transient_local());
-  auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>(pub_odom_topic,20);
-  auto path_pub = node->create_publisher<nav_msgs::msg::Path>(pub_odom_topic+"/path",rclcpp::QoS(20).transient_local());
-
-	try
+ 	try
 	{
 		ros_ser.setPort(dev);
 		ros_ser.setBaudrate(baud);
@@ -182,7 +200,7 @@ int main(int argc, char ** argv)
 			//获取串口数据
 			serial_data.data = ros_ser.read(ros_ser.available());
 			//cout<<serial_data.data << "\n"<<endl;
-			uart_recive_flag = analy_uart_recive_data(serial_data.data,imu_pub);
+			uart_recive_flag = analy_uart_recive_data(serial_data,imu_pub);
 			if(uart_recive_flag)
 			{
 				uart_recive_flag=0;
@@ -218,22 +236,284 @@ int main(int argc, char ** argv)
 
 void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
+    //ROS_INFO_STREAM("Write to serial port" << msg->data);
+	// ostringstream os;
 	float speed_x,speed_y,speed_w;
+	float v1=0,v2=0,v3=0,v4=0;
+	// os<<"speed_x:"<<msg->linear.x<<"      speed_y:"<<msg->linear.y<<"      speed_w:"<<msg->angular.z<<'\n';
+	//cout<<os.str()<<endl;
+	//send_speed_to_chassis(msg->linear.x*10,msg->linear.y*10,msg->angular.z*2);
+
+
 	speed_x = msg->linear.x;
 	speed_y = 0;
 	speed_w = msg->angular.z;
+  
+
 	
-	int chassis_type = 0; //默认采用差速模式  0：差速  1-麦克纳姆轮  2: Ackermann  3:4WS4WD
-	send_speed_to_chassis(ros_ser, chassis_type, speed_x,speed_y,speed_w);
+	if(chassis_type == 0) //mick-v3 差速模式
+	{
+		send_speed_to_X4chassis( speed_x,speed_y,speed_w);
+		return ;
+	}
+	else if(chassis_type == 1) // 麦克纳姆轮模式
+	{
+		float v1=0,v2=0,v3=0,v4=0;
+		v1 = speed_x-speed_y-WHEEL_K*speed_w;       //转化为每个轮子的线速度
+		v2 = speed_x+speed_y-WHEEL_K*speed_w;
+		v3 =-(speed_x-speed_y+WHEEL_K*speed_w);
+		v4 =-(speed_x+speed_y+WHEEL_K*speed_w);
+
+		v1 =v1/(WHEEL_D*WHEEL_PI)*60;    //转换为轮子的速度　-》 RPM
+		v2 =v2/(WHEEL_D*WHEEL_PI)*60;
+		v3 =v3/(WHEEL_D*WHEEL_PI)*60;
+		v4 =v4/(WHEEL_D*WHEEL_PI)*60;
+		//send_rpm_to_chassis(v1,v2,v3,v4);
+	}
+	else if(chassis_type == 2) // 阿卡曼模式
+	{
+		//send_speed_to_Ackerchassis(speed_x, speed_w); //直接发送目标速度 和 角速度
+		//ROS_INFO_STREAM("send_speed_to_Ackerchassis: "<<speed_x<<"  "<<speed_w);
+		return ;
+	}
+	else if(chassis_type == 3) // 4WS4WD模式
+	{
+		//send_speed_to_4WS4WDchassis(speed_x,speed_y,speed_w);
+		// RCLCPP_INFO_STREAM(node->get_logger(),"send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w);
+		cout << "send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w << endl;
+		return ;
+	}
+	else
+	{
+		// RCLCPP_INFO_STREAM(node->get_logger(),"unknown chassis type ! ");
+		cout << "unknown chassis type ! " << endl;
+	}
+ 
 }
 
+/**
+ * @function  发送四个点击的转速到底盘控制器
+ * ＠param w1 w2 w3 w4 表示四个电机的转速 单位　RPM
+ */
+void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
+{
+	uint8_t data_tem[50];
+	unsigned int speed_0ffset=10000; //转速偏移10000转
 
+	unsigned char i,counter=0;
+	unsigned char  cmd;
+	unsigned int check=0;
+	cmd =0xF1;
+	data_tem[counter++] =0xAE;
+	data_tem[counter++] =0xEA;
+	data_tem[counter++] =0x0B;
+	data_tem[counter++] =cmd;
+
+	data_tem[counter++] =(w1+speed_0ffset)/256; // 
+	data_tem[counter++] =(w1+speed_0ffset)%256;
+
+	data_tem[counter++] =(w2+speed_0ffset)/256; // 
+	data_tem[counter++] =(w2+speed_0ffset)%256;
+
+	data_tem[counter++] =(w3+speed_0ffset)/256; // 
+	data_tem[counter++] =(w3+speed_0ffset)%256;
+
+	data_tem[counter++] =(w4+speed_0ffset)/256; // 
+	data_tem[counter++] =(w4+speed_0ffset)%256;
+
+	for(i=0;i<counter;i++)
+	{
+		check+=data_tem[i];
+	}
+	data_tem[counter++] =0xff;
+	data_tem[2] =counter-2;
+	data_tem[counter++] =0xEF;
+	data_tem[counter++] =0xFE;
+
+	ros_ser.write(data_tem,counter);
+}
+
+// 差速小车
+void send_speed_to_X4chassis(float x,float y,float w)
+{
+	uint8_t data_tem[50];
+	unsigned int speed_0ffset=10; //速度偏移值 10ｍ/s，把速度转换成正数发送
+	unsigned char i,counter=0;	 
+	unsigned int check=0;
+
+	data_tem[counter++] =0xAE;
+	data_tem[counter++] =0xEA;
+	data_tem[counter++] =0x0B;
+	data_tem[counter++] = 0xF3; //针对MickX4的小车使用F3 字段      针对MickM4的小车使用F2
+	data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
+	data_tem[counter++] =((x+speed_0ffset)*100);
+	data_tem[counter++] =((y+speed_0ffset)*100)/256; // Y
+	data_tem[counter++] =((y+speed_0ffset)*100);
+	data_tem[counter++] =((w+speed_0ffset)*100)/256; // X
+	data_tem[counter++] =((w+speed_0ffset)*100);
+	data_tem[counter++] =0x00;
+	data_tem[counter++] =0x00;
+	for(i=0;i<counter;i++)
+	{
+		check+=data_tem[i];
+	}
+	data_tem[counter++] =0xff;
+	data_tem[2] =counter-2;
+	data_tem[counter++] =0xEF;
+	data_tem[counter++] =0xFE;
+	ros_ser.write(data_tem,counter);
+}
+
+void send_speed_to_Ackerchassis(float x,float w)
+{
+  uint8_t data_tem[50];
+  unsigned int speed_0ffset=10; //速度偏移值 10ｍ/s，把速度转换成正数发送
+  unsigned char i,counter=0;
+  unsigned char  cmd;
+  unsigned int check=0;
+  cmd =0xF4;  
+  data_tem[counter++] =0xAE;
+  data_tem[counter++] =0xEA;
+  data_tem[counter++] =0x0B;
+  data_tem[counter++] =cmd;
+  data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
+  data_tem[counter++] =((x+speed_0ffset)*100);
+  data_tem[counter++] =0; // Y
+  data_tem[counter++] =0;
+  data_tem[counter++] =((w+speed_0ffset)*100)/256; //  w
+  data_tem[counter++] =((w+speed_0ffset)*100);
+
+  for(i=0;i<counter;i++)
+  {
+    check+=data_tem[i];
+  }
+  data_tem[counter++] =0xff;
+   data_tem[2] =counter-2;
+  data_tem[counter++] =0xEF;
+  data_tem[counter++] =0xFE;
+  ros_ser.write(data_tem,counter);
+}
+
+void send_speed_to_4WS4WDchassis(float x,float y,float w)
+{
+  uint8_t data_tem[50];
+  unsigned int speed_0ffset=10; //速度偏移值 10ｍ/s，把速度转换成正数发送
+  unsigned char i,counter=0;
+  unsigned char  cmd=0xF2; 
+  unsigned int check=0;
+  
+  data_tem[counter++] =0xAE;
+  data_tem[counter++] =0xEA;
+  data_tem[counter++] =0x0B;
+  data_tem[counter++] =cmd;
+  data_tem[counter++] =((x+speed_0ffset)*100)/256; // X
+  data_tem[counter++] =((x+speed_0ffset)*100);
+  data_tem[counter++] =((y+speed_0ffset)*100)/256; // Y
+  data_tem[counter++] =((y+speed_0ffset)*100);
+  data_tem[counter++] =((w+speed_0ffset)*100)/256; // W
+  data_tem[counter++] =((w+speed_0ffset)*100);
+  for(i=0;i<counter;i++)
+  {
+    check+=data_tem[i];
+  }
+  data_tem[counter++] =0xff;
+   data_tem[2] =counter-2;
+  data_tem[counter++] =0xEF;
+  data_tem[counter++] =0xFE;
+  ros_ser.write(data_tem,counter);
+}
+
+/**********************************************************
+ * @function  发送6个电机的转速到底盘控制器
+ * ＠param vw 表示 (w1 v1 w2 v2 .... w6 v6)
+ * 电机的转速 单位　RPM
+ * 角度    单位  °度
+**********************************************************/
+void send_rpm_to_4WS4WDchassis(const rclcpp::Node::SharedPtr node,vector<float> vw)
+{
+	if(vw.size()<12)
+	{	
+        
+		RCLCPP_INFO_STREAM(node->get_logger(),"For 4ws4wd chasiss, the length of vm < 12");
+		return;
+	}
+
+  uint8_t data_tem[50];
+  unsigned int speed_0ffset=10000; //转速偏移10000转
+   unsigned int theta_0ffset=360; 
+  unsigned char i,counter=0;
+  unsigned char  cmd;
+  unsigned int check=0;
+  cmd =0xFA;
+  data_tem[counter++] =0xAE;
+  data_tem[counter++] =0xEA;
+  data_tem[counter++] =0x0B;
+  data_tem[counter++] =cmd;
+ 
+	i=0;
+	for(int j=0;j<6;j++)
+	{
+		data_tem[counter++] =((vw[ i]+theta_0ffset)*100)/256;
+		data_tem[counter++] =((vw[i++]+theta_0ffset)*100);
+		data_tem[counter++] =(vw[ i]+speed_0ffset)/256; // 
+		data_tem[counter++] =(vw[ i++]+speed_0ffset);
+	}
+ 
+  for(i=0;i<counter;i++)
+  {
+    check+=data_tem[i];
+  }
+  data_tem[counter++] =0xff;
+   data_tem[2] =counter-2;
+  data_tem[counter++] =0xEF;
+  data_tem[counter++] =0xFE;
+ 
+ ros_ser.write(data_tem,counter);
+}
+
+void clear_odometry_chassis(void)
+{
+  uint8_t data_tem[50];
+  unsigned char i,counter=0;
+  unsigned char  cmd,resave=0x00;
+  unsigned int check=0;
+  cmd =0xE1;
+  data_tem[counter++] =0xAE;
+  data_tem[counter++] =0xEA;
+  data_tem[counter++] =0x0B;
+  data_tem[counter++] =cmd;
+  
+  data_tem[counter++] =0x01; //  清零里程计
+  data_tem[counter++] =resave;
+  
+  data_tem[counter++] =resave; // 
+  data_tem[counter++] =resave;
+  
+  data_tem[counter++] =resave; // 
+  data_tem[counter++] =resave;
+  
+  data_tem[counter++] =resave; // 
+  data_tem[counter++] =resave;
+  
+ 
+  for(i=0;i<counter;i++)
+  {
+    check+=data_tem[i];
+  }
+  data_tem[counter++] =0xff;
+  data_tem[2] =counter-2;
+  data_tem[counter++] =0xEF;
+  data_tem[counter++] =0xFE;
+ 
+ ros_ser.write(data_tem,counter);
+  
+}
 
 /**
  * @function 解析串口发送过来的数据帧
  * 成功则返回true　否则返回false
  */
-bool analy_uart_recive_data(std::string& str_data,
+bool analy_uart_recive_data(std_msgs::msg::String serial_data,
 								rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub)
 {
 	unsigned char reviced_tem[500];
@@ -241,15 +521,15 @@ bool analy_uart_recive_data(std::string& str_data,
 	unsigned char check=0;
 	unsigned char tem_last=0,tem_curr=0,rec_flag=0;//定义接收标志位
 	uint16_t header_count=0,step=0; //计数这个数据序列中有多少个帧头
-	len=str_data.size();
+	len=serial_data.data.size();
 	if(len<1 || len>500)
 	{
-		std::cout<<"serial data is too short ,  len: " << str_data.size()<<std::endl;
-		// std_msgs::msg::String serial_data;
-		// string str_tem;
+		std::cout<<"serial data is too short ,  len: " << serial_data.data.size()<<std::endl;
+		std_msgs::msg::String serial_data;
+		string str_tem;
 
-		// serial_data.data = ros_ser.read(ros_ser.available());
-		// str_tem =  serial_data.data;
+		serial_data.data = ros_ser.read(ros_ser.available());
+		str_tem =  serial_data.data;
 		return false; //数据长度太短　
 	}
 	//ROS_INFO_STREAM("Read: " << serial_data.data.size() );
@@ -258,7 +538,7 @@ bool analy_uart_recive_data(std::string& str_data,
 	for( i=0;i<len;i++) 
 	{
 		tem_last=  tem_curr;
-		tem_curr = str_data.at(i);
+		tem_curr = serial_data.data.at(i);
 		if(tem_last == 0xAE && tem_curr==0xEA&&rec_flag==0) //在接受的数据串中找到帧头　
 		{
 			rec_flag=1;
@@ -268,7 +548,7 @@ bool analy_uart_recive_data(std::string& str_data,
 		}
 		else if (rec_flag==1)
 		{
-			reviced_tem[j++]=str_data.at(i);
+			reviced_tem[j++]=serial_data.data.at(i);
 			if(tem_last == 0xEF && tem_curr==0xFE)
 			{
 				header_count++;
@@ -304,30 +584,28 @@ bool analy_uart_recive_data(std::string& str_data,
 					speed_rpm.byte_data[2]=reviced_tem[i++];
 					speed_rpm.byte_data[1] = reviced_tem[i++] ; 
 					speed_rpm.byte_data[0] = reviced_tem[i++] ;
-					mick_chassis.moto_measurements[j].speed_rpm = speed_rpm.int32_dat;			//*1000	
+					moto_chassis[j].speed_rpm = speed_rpm.int32_dat;			//*1000	
 					
 					round_cnt.byte_data[3]=reviced_tem[i++]; 
 					round_cnt.byte_data[2]=reviced_tem[i++];
 					round_cnt.byte_data[1] = reviced_tem[i++] ; 
 					round_cnt.byte_data[0] = reviced_tem[i++] ;
-					mick_chassis.moto_measurements[j].round_cnt =  round_cnt.int32_dat;
+					moto_chassis[j].round_cnt =  round_cnt.int32_dat;
 					
 					total_angle.byte_data[3]=reviced_tem[i++]; 
 					total_angle.byte_data[2]=reviced_tem[i++];
 					total_angle.byte_data[1] = reviced_tem[i++] ; 
 					total_angle.byte_data[0] = reviced_tem[i++] ;
-					mick_chassis.moto_measurements[j].angle =  total_angle.int32_dat;
-
-					mick_chassis.moto_measurements[j].available = 0x01;
+					moto_chassis[j].angle =  total_angle.int32_dat;
 				}
 				
 				// ROS_INFO_STREAM("recived mickv3 chassis motor data" ); 
 				// for(j=0;j<4;j++)
 				// {
 				// 	// 打印四个电机的转速、转角、温度等信息
-				// 	ROS_INFO_STREAM("M "<< j <<"\t rpm: "<<mick_chassis.moto_measurements[j].speed_rpm
-				// 							<<": \t round_cnt: "<<mick_chassis.moto_measurements[j].round_cnt
-				// 							<<"  angle: "<<mick_chassis.moto_measurements[j].angle );
+				// 	ROS_INFO_STREAM("M "<< j <<"\t rpm: "<<moto_chassis[j].speed_rpm
+				// 							<<": \t round_cnt: "<<moto_chassis[j].round_cnt
+				// 							<<"  angle: "<<moto_chassis[j].angle );
 				// }
 			}
 			else if (reviced_tem[3+step] ==0x08 ) //mickv3 4个电机状态数据
@@ -339,53 +617,53 @@ bool analy_uart_recive_data(std::string& str_data,
 				i=4+step;
 				odom.int16_dat = 0;
 				odom.int16_dat=0;odom.byte_data[1] = reviced_tem[i++] ; odom.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.odom_measurements.vx = odom.int16_dat/1000.0f;
+				mickv3_chassis.odom_measurements.vx = odom.int16_dat/1000.0f;
 
 				odom.int16_dat = 0;
 				odom.int16_dat=0;odom.byte_data[1] = reviced_tem[i++] ; odom.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.odom_measurements.vy = odom.int16_dat/1000.0f;
+				mickv3_chassis.odom_measurements.vy = odom.int16_dat/1000.0f;
 
 				odom.int16_dat = 0;
 				odom.int16_dat=0;odom.byte_data[1] = reviced_tem[i++] ; odom.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.odom_measurements.wz = odom.int16_dat/1000.0f;
+				mickv3_chassis.odom_measurements.wz = odom.int16_dat/1000.0f;
 				 
-				mick_chassis.odom_measurements.available = 0x01;
-				//printf("odom: %f\t%f\t%f\n",mick_chassis.vx,mick_chassis.vy,mick_chassis.wz);
+				mickv3_chassis.odom_measurements.available = 0x01;
+				//printf("odom: %f\t%f\t%f\n",mickv3_chassis.vx,mickv3_chassis.vy,mickv3_chassis.wz);
 			}
 			else if (reviced_tem[3+step] ==0xA0 ) // IMU 数据
 			{
 				i=4+step;
 				
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ;imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.ax = imu.int16_dat;
+				imu_chassis.ax = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.ay = imu.int16_dat;
+				imu_chassis.ay = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.az = imu.int16_dat;
+				imu_chassis.az = imu.int16_dat;
 				
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ;imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.gx = imu.int16_dat;
+				imu_chassis.gx = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.gy = imu.int16_dat;
+				imu_chassis.gy = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.gz = imu.int16_dat;
+				imu_chassis.gz = imu.int16_dat;
 				
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.mx = imu.int16_dat;
+				imu_chassis.mx = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.my = imu.int16_dat;
+				imu_chassis.my = imu.int16_dat;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.mz = imu.int16_dat;
+				imu_chassis.mz = imu.int16_dat;
 				
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.pitch = imu.int16_dat/100.0f;
+				imu_chassis.pitch = imu.int16_dat/100.0f;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.roll = imu.int16_dat/100.0f;
+				imu_chassis.roll = imu.int16_dat/100.0f;
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
-				mick_chassis.imu_measurements.yaw = imu.int16_dat/100.0f;
-				mick_chassis.imu_measurements.available = 0x01;
-				publish_imu(mick_chassis.imu_measurements,imu_pub);
-				printf("recived imu  data" ); 
+				imu_chassis.yaw = imu.int16_dat/100.0f;
+				
+				publish_imu(imu_chassis,imu_pub);
+				//ROS_INFO_STREAM("recived imu  data" ); 
 			}
 			else if (reviced_tem[3+step] ==0xA1 )
 			{
@@ -398,41 +676,41 @@ bool analy_uart_recive_data(std::string& str_data,
 				for(int j =0;j<10;j++)
 				{
 					ultra_tem=reviced_tem[i++]*256; 		ultra_tem = ultra_tem+reviced_tem[i++];
-					mick_chassis.ultrasonic.push_back(ultra_tem);
+					Ultrasonic_data.push_back(ultra_tem);
 				}
-				printf("recived Ulrat data" ); 
+				printf("recived Ulrat  data" ); 
 			}
 			else if (reviced_tem[3 + step] == 0xA3)
 			{
 				i = 4 + step;
 
-				mick_chassis.rc.ch1 = reviced_tem[i++];
-				mick_chassis.rc.ch1 = (mick_chassis.rc.ch1 << 8) + reviced_tem[i++];
-				mick_chassis.rc.ch2 = reviced_tem[i++];
-				mick_chassis.rc.ch2 = (mick_chassis.rc.ch2 << 8) + reviced_tem[i++];
-				mick_chassis.rc.ch3 = reviced_tem[i++];
-				mick_chassis.rc.ch3 = (mick_chassis.rc.ch3 << 8) + reviced_tem[i++];
-				mick_chassis.rc.ch4 = reviced_tem[i++];
-				mick_chassis.rc.ch4 = (mick_chassis.rc.ch4 << 8) + reviced_tem[i++];
-				mick_chassis.rc.sw1 = reviced_tem[i++];
-				mick_chassis.rc.sw2 = reviced_tem[i++];
-				mick_chassis.rc.sw3 = reviced_tem[i++];
-				mick_chassis.rc.sw4 = reviced_tem[i++];
-				mick_chassis.rc.type = reviced_tem[i++];// 1 DJI-DBUS   2 SBUS 遥控器类型
-				mick_chassis.rc.status = reviced_tem[i++];
-				mick_chassis.rc.update = 0x01;
-				if (mick_chassis.rc.ch1 >= (RC_MIN-200) && mick_chassis.rc.ch1 <=(RC_MAX+200))
+				rc.ch1 = reviced_tem[i++];
+				rc.ch1 = (rc.ch1 << 8) + reviced_tem[i++];
+				rc.ch2 = reviced_tem[i++];
+				rc.ch2 = (rc.ch2 << 8) + reviced_tem[i++];
+				rc.ch3 = reviced_tem[i++];
+				rc.ch3 = (rc.ch3 << 8) + reviced_tem[i++];
+				rc.ch4 = reviced_tem[i++];
+				rc.ch4 = (rc.ch4 << 8) + reviced_tem[i++];
+				rc.sw1 = reviced_tem[i++];
+				rc.sw2 = reviced_tem[i++];
+				rc.sw3 = reviced_tem[i++];
+				rc.sw4 = reviced_tem[i++];
+				rc.type = reviced_tem[i++];// 1 DJI-DBUS   2 SBUS 遥控器类型
+				rc.status = reviced_tem[i++];
+				rc.update = 0x01;
+				if (rc.ch1 >= (RC_MIN-200) && rc.ch1 <=(RC_MAX+200))
 				{
-					mick_chassis.rc.available = 0x01;
+					rc.available = 0x01;
 				}
 				else
 				{
-					printf("mick_chassis.rc.chx < RC_MIN || mick_chassis.rc.chx > RC_MAX");
+					printf("rc.chx < RC_MIN || rc.chx > RC_MAX");
 				}
 				// if(show_message)
 				// {
-				// 	ROS_INFO_STREAM("RC_Remotes date  ch1: " << mick_chassis.rc.ch1 << " ch2: " << mick_chassis.rc.ch2
-				// 					 << " ch3: " << mick_chassis.rc.ch3 << " ch4: " << mick_chassis.rc.ch4 << " sw1: " 
+				// 	ROS_INFO_STREAM("RC_Remotes date  ch1: " << rc.ch1 << " ch2: " << rc.ch2
+				// 					 << " ch3: " << rc.ch3 << " ch4: " << rc.ch4 << " sw1: " 
 				// 					 << rc.sw1 << " sw2: " << rc.sw2<< " sw3: " 
 				// 					 << rc.sw3 << " sw4: " << rc.sw4<< " type: " << rc.type);
 				// }
@@ -440,7 +718,7 @@ bool analy_uart_recive_data(std::string& str_data,
 			}
 			else if (reviced_tem[3+step] ==0xAC ) // IO状态
 			{
-				;
+
 			}
 			else
 			{
@@ -478,7 +756,7 @@ void calculate_chassisDiffX4_position_for_odometry(rclcpp::Node::SharedPtr node,
 	float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
 	float linear_x,linear_y,linear_w;
 		
-	if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (mick_chassis.moto_measurements[0].counter ==0)))
+	if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (moto_chassis[0].counter ==0)))
 	{
 		position_x = 0 ; 
 		position_y =0 ; 
@@ -490,11 +768,11 @@ void calculate_chassisDiffX4_position_for_odometry(rclcpp::Node::SharedPtr node,
 		return ;
 	}
 
-	if(mick_chassis.odom_measurements.available = 0x01) //直接使用底盘上传的里程计数据
+	if(mickv3_chassis.odom_measurements.available = 0x01) //直接使用底盘上传的里程计数据
 	{
-		linear_x = mick_chassis.odom_measurements.vx;
+		linear_x = mickv3_chassis.odom_measurements.vx;
 		linear_y = 0;
-		linear_w = mick_chassis.odom_measurements.wz;  
+		linear_w = mickv3_chassis.odom_measurements.wz;  
 	}
 
 	//设置死区
@@ -548,7 +826,7 @@ void calculate_chassisAckermann_position_for_odometry(rclcpp::Node::SharedPtr no
   float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
   float linear_x,linear_y,linear_w;
 	 
-  if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (mick_chassis.moto_measurements[0].counter ==0)))
+  if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (moto_chassis[0].counter ==0)))
   {
 		position_x = 0 ; 
 		position_y =0 ; 
@@ -559,8 +837,8 @@ void calculate_chassisAckermann_position_for_odometry(rclcpp::Node::SharedPtr no
 		return ;
   }
     // float RPM = v*70.02556; // 轮子直径是258mm               70.02556=60/(3.1415926*0.258);
-	float v_l = (mick_chassis.moto_measurements[1].speed_rpm/1000.0)/70.02556; //rpm -> m/s  
-	float v_r = (mick_chassis.moto_measurements[2].speed_rpm/1000.0)/70.02556;
+	float v_l = (moto_chassis[1].speed_rpm/1000.0)/70.02556; //rpm -> m/s  
+	float v_r = (moto_chassis[2].speed_rpm/1000.0)/70.02556;
  
  	// 利用轮子的转速来推算
 	linear_x =( v_r + v_l)/2.0;
@@ -603,7 +881,7 @@ void calculate_chassisAckermann2_position_for_odometry(rclcpp::Node::SharedPtr n
 	float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
 	float linear_x,linear_y,linear_w;
 		
-	if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (mick_chassis.moto_measurements[0].counter ==0)))
+	if(motor_init_flag == 0 && ((s1_last == 0 && s2_last == 0&& s3_last==0&&s4_last==0) || (moto_chassis[0].counter ==0)))
 	{
 		position_x = 0 ; 
 		position_y =0 ; 
@@ -614,15 +892,15 @@ void calculate_chassisAckermann2_position_for_odometry(rclcpp::Node::SharedPtr n
 		return ;
 	}
 	// float RPM = v*70.02556; // 轮子直径是258mm               70.02556=60/(3.1515926*0.258);
-	float v_1 = (mick_chassis.moto_measurements[0].speed_rpm/1000.0)/70.02556;  
-	float v_2 = (mick_chassis.moto_measurements[1].speed_rpm/1000.0)/70.02556; //rpm -> m/s  
-	float v_3 = (mick_chassis.moto_measurements[2].speed_rpm/1000.0)/70.02556;
-	float v_4 = (mick_chassis.moto_measurements[3].speed_rpm/1000.0)/70.02556;
+	float v_1 = (moto_chassis[0].speed_rpm/1000.0)/70.02556;  
+	float v_2 = (moto_chassis[1].speed_rpm/1000.0)/70.02556; //rpm -> m/s  
+	float v_3 = (moto_chassis[2].speed_rpm/1000.0)/70.02556;
+	float v_4 = (moto_chassis[3].speed_rpm/1000.0)/70.02556;
 
-	float theta_1 = (mick_chassis.moto_rmd_measurements[0].angle)*0.0001745; //(0.01° -> rad) 
-	float theta_2 = (mick_chassis.moto_rmd_measurements[1].angle)*0.0001745;
-	float theta_3 = (mick_chassis.moto_rmd_measurements[2].angle)*0.0001745;
-	float theta_4 = (mick_chassis.moto_rmd_measurements[3].angle)*0.0001745;
+	float theta_1 = (moto_rmd_chassis[0].angle)*0.0001745; //(0.01° -> rad) 
+	float theta_2 = (moto_rmd_chassis[1].angle)*0.0001745;
+	float theta_3 = (moto_rmd_chassis[2].angle)*0.0001745;
+	float theta_4 = (moto_rmd_chassis[3].angle)*0.0001745;
 
 		// 左右侧轮距 0.796    前后轮距 0.8083
 	float rx = 0.796/2.0;
@@ -773,7 +1051,7 @@ void publish_imu(imu_measure_t& imu_m,rclcpp::Publisher<sensor_msgs::msg::Imu>::
 // 发布遥控器数据
 bool publish_joy_msg(rclcpp::Node::SharedPtr node,rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub)
 {
-	if(mick_chassis.rc.update != 0x01)
+	if(rc.update != 0x01)
 	{
 		RCLCPP_WARN_STREAM(node->get_logger(),"rc.update != 0x01 ");
 		return false;
@@ -798,26 +1076,26 @@ bool publish_joy_msg(rclcpp::Node::SharedPtr node,rclcpp::Publisher<sensor_msgs:
 	}
 	else
 	{
-		if (mick_chassis.rc.available == 1) 
+		if (rc.available == 1) 
 		{
 			 
 			float ch1,ch2,ch3,ch4;
 			 
 			float rc_k = 1;
 
-			if (mick_chassis.rc.sw2 == 1)            rc_k = 1;
-			else if (mick_chassis.rc.sw2 == 3)   rc_k = 2;
-			else if (mick_chassis.rc.sw2 == 2)  	rc_k = 3; // 3m/s
+			if (rc.sw2 == 1)            rc_k = 1;
+			else if (rc.sw2 == 3)   rc_k = 2;
+			else if (rc.sw2 == 2)  	rc_k = 3; // 3m/s
 			else 				rc_k = 0;
 			
 			// 设置死区
-			ch1 = (mick_chassis.rc.ch1 - mick_chassis.rc.ch1_offset) / (RC_MAX - mick_chassis.rc.ch1_offset);
+			ch1 = (rc.ch1 - rc.ch1_offset) / (RC_MAX - rc.ch1_offset);
 			if(abs(ch1)<0.2) ch1=0;
-			ch2 =(mick_chassis.rc.ch2 - mick_chassis.rc.ch2_offset) / (RC_MAX - mick_chassis.rc.ch2_offset);
+			ch2 =(rc.ch2 - rc.ch2_offset) / (RC_MAX - rc.ch2_offset);
 			if(abs(ch2)<0.2) ch2=0;
-			ch3 = (mick_chassis.rc.ch3 - mick_chassis.rc.ch3_offset) / (RC_MAX - mick_chassis.rc.ch3_offset);
+			ch3 = (rc.ch3 - rc.ch3_offset) / (RC_MAX - rc.ch3_offset);
 			if(abs(ch3)<0.2) ch3=0;
-			ch4 =(mick_chassis.rc.ch4 - mick_chassis.rc.ch4_offset) / (RC_MAX - mick_chassis.rc.ch4_offset);
+			ch4 =(rc.ch4 - rc.ch4_offset) / (RC_MAX - rc.ch4_offset);
 			if(abs(ch4)<0.2) ch4=0;
 
 			sensor_msgs::msg::Joy joy_msg;
@@ -825,14 +1103,14 @@ bool publish_joy_msg(rclcpp::Node::SharedPtr node,rclcpp::Publisher<sensor_msgs:
 			joy_msg.axes.push_back(RC_K *rc_k*ch2);
 			joy_msg.axes.push_back(RC_K *rc_k*ch3);
 			joy_msg.axes.push_back(RC_K *rc_k*ch4);
-			joy_msg.buttons.push_back(mick_chassis.rc.sw1);
-			joy_msg.buttons.push_back(mick_chassis.rc.sw2);
+			joy_msg.buttons.push_back(rc.sw1);
+			joy_msg.buttons.push_back(rc.sw2);
 			joy_pub->publish(joy_msg);
  
 			return 1;
 		}
 	}
-	mick_chassis.rc.update = 0;
+	rc.update = 0;
 	 
 	return 1;
 }
@@ -842,14 +1120,14 @@ int calculate_rc_offset(rclcpp::Node::SharedPtr node)
 	int re_flag = 0;
 	if(init_times < 20)
 	{
-		if ((mick_chassis.rc.ch1 > 900 && mick_chassis.rc.ch1 < 1100) && (mick_chassis.rc.ch2 > 900 && mick_chassis.rc.ch2 < 1100)
-			&& (mick_chassis.rc.ch3 > 900 && mick_chassis.rc.ch3 < 1100) && (mick_chassis.rc.ch4 > 900 && mick_chassis.rc.ch4 < 1100))
+		if ((rc.ch1 > 900 && rc.ch1 < 1100) && (rc.ch2 > 900 && rc.ch2 < 1100)
+			&& (rc.ch3 > 900 && rc.ch3 < 1100) && (rc.ch4 > 900 && rc.ch4 < 1100))
 		{
-			sum_offset[0] += mick_chassis.rc.ch1;
-			sum_offset[1] += mick_chassis.rc.ch2;
-			sum_offset[2] += mick_chassis.rc.ch3;
-			sum_offset[3] += mick_chassis.rc.ch4;
-			mick_chassis.rc.available = 0;
+			sum_offset[0] += rc.ch1;
+			sum_offset[1] += rc.ch2;
+			sum_offset[2] += rc.ch3;
+			sum_offset[3] += rc.ch4;
+			rc.available = 0;
 			rc_init_flags = 1; // 0 未标定   1 标定中   2标定完成
 			init_times++;
 			RCLCPP_WARN_STREAM(node->get_logger(),"calibrate...");
@@ -858,15 +1136,15 @@ int calculate_rc_offset(rclcpp::Node::SharedPtr node)
 	}
 	else
 	{
-		mick_chassis.rc.ch1_offset = sum_offset[0] / init_times;
-		mick_chassis.rc.ch2_offset = sum_offset[1] / init_times;
-		mick_chassis.rc.ch3_offset = sum_offset[2] / init_times;
-		mick_chassis.rc.ch4_offset = sum_offset[3] / init_times;
-		RCLCPP_INFO_STREAM(node->get_logger(),"ch1_offset: " <<mick_chassis.rc.ch1_offset << " ch2_offset: " << mick_chassis.rc.ch2_offset
-				 << "ch3_offset: " <<mick_chassis.rc.ch3_offset << " ch4_offset: " << mick_chassis.rc.ch4_offset);
-		if (mick_chassis.rc.ch1_offset == 0 || mick_chassis.rc.ch2_offset == 0 || mick_chassis.rc.ch3_offset == 0 || mick_chassis.rc.ch4_offset == 0)
+		rc.ch1_offset = sum_offset[0] / init_times;
+		rc.ch2_offset = sum_offset[1] / init_times;
+		rc.ch3_offset = sum_offset[2] / init_times;
+		rc.ch4_offset = sum_offset[3] / init_times;
+		RCLCPP_INFO_STREAM(node->get_logger(),"ch1_offset: " <<rc. ch1_offset << " ch2_offset: " << rc.ch2_offset
+				 << "ch3_offset: " <<rc. ch3_offset << " ch4_offset: " << rc.ch4_offset);
+		if (rc.ch1_offset == 0 || rc.ch2_offset == 0 || rc.ch3_offset == 0 || rc.ch4_offset == 0)
 		{
-			mick_chassis.rc.available = 0;
+			rc.available = 0;
 			rc_init_flags = 0;
 			init_times = 0;
 			sum_offset[0] = 0;
@@ -878,7 +1156,7 @@ int calculate_rc_offset(rclcpp::Node::SharedPtr node)
 		}
 		else
 		{
-			mick_chassis.rc.available = 1;
+			rc.available = 1;
 			rc_init_flags = 0x02;
 			RCLCPP_INFO_STREAM(node->get_logger(),"remote calibrate successful");
 			re_flag = 2; //标定成功

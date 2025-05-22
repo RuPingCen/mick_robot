@@ -3,6 +3,18 @@
 
 #include <stdint.h>
 
+
+union INT32Data //union的作用为实现char数组和int32之间的转换
+{
+	int32_t int32_dat;
+	unsigned char byte_data[4];
+};
+union Int16Data //union的作用为实现char数组和int16数据类型之间的转换
+{
+	int16_t int16_dat;
+	unsigned char byte_data[2];
+};
+
 typedef struct{
 		uint8_t available; //是否数据是否有效可用
 		uint32_t counter;
@@ -50,25 +62,27 @@ typedef struct
 typedef struct
 {
 	char available;
-	float vx,vy,wz;
-	float px,py,pz;
-	float roll,pitch,yaw;
+	float x,y,z;
+	float vx,vy,vz;
+	float wx,wy,wz; // rad/s  角速度
+
+	float roll,pitch,yaw; //rad
 	float qx,qy,qz,qw;
 } odom_measure_t;
 
 struct chassis_measure_t{
 		
+	//默认采用差速模式  0：差速  1-麦克纳姆轮  2: Ackermann  3:4WS4WD
+	int8_t chassis_type; // 0:X4  1:M4  2: Ackermann  3:4WS4WD
+	int8_t chassis_motor_type; // 0 M3508    1: 安普斯电机
 
-		int8_t chassis_type; // 0:X4  1:M4  2: Ackermann  3:4WS4WD
-		int8_t chassis_motor_type; // 0 M3508    1: 安普斯电机
+	odom_measure_t odom_measurements;
+	
+	moto_measure_t moto_measurements[4] = {0};
+	moto_measure_t moto_rmd_measurements[4] = {0};
 
- 		odom_measure_t odom_measurements;
-		
-		moto_measure_t moto_measurements[4] = {0};
-		moto_measure_t moto_rmd_measurements[4] = {0};
-
-		volatile rc_info_t rc;
-		imu_measure_t imu_measurements;  //IMU 数据 
-		std::vector<uint16_t> ultrasonic; //超声波数据
+	volatile rc_info_t rc;
+	imu_measure_t imu_measurements;  //IMU 数据 
+	std::vector<uint16_t> ultrasonic; //超声波数据
 };
 #endif 
