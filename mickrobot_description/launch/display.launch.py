@@ -15,7 +15,7 @@ def generate_launch_description():
   default_rviz_config_path = os.path.join(pkg_share, 'rviz/urdf.rviz')
 
   # Set the path to the URDF file
-  default_urdf_model_path = os.path.join(pkg_share, 'urdf/mickrobot_stl.urdf')
+  default_urdf_model_path = os.path.join(pkg_share, 'urdf/mickrobotwheel_stl.urdf')
 
   ########### YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE ##############  
   # Launch configuration variables specific to simulation

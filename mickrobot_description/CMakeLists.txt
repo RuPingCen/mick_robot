@@ -27,3 +27,8 @@ ament_package()
 install(  DIRECTORY launch urdf rviz
 DESTINATION share/${PROJECT_NAME}
 )
+
+install(DIRECTORY worlds
+  DESTINATION share/${PROJECT_NAME}
+)
+

@@ -1,20 +1,32 @@
 digraph G {
 node [shape=box];
 "base_link" [label="base_link"];
-"camera" [label="camera"];
+"camera_link" [label="camera_link"];
+"gnss_link" [label="gnss_link"];
+"imu_link" [label="imu_link"];
+"laser_link" [label="laser_link"];
 "left_back_wheel" [label="left_back_wheel"];
-"right_front_wheel" [label="right_front_wheel"];
-"right_back_wheel" [label="right_back_wheel"];
 "left_front_wheel" [label="left_front_wheel"];
+"right_back_wheel" [label="right_back_wheel"];
+"right_front_wheel" [label="right_front_wheel"];
+"sensor_link" [label="sensor_link"];
 node [shape=ellipse, color=blue, fontcolor=blue];
-"base_link" -> "camera_joint" [label="xyz: 0.1 0 0.025 \nrpy: 0 -0 0"]
-"camera_joint" -> "camera"
-"base_link" -> "left_back_wheel_joint" [label="xyz: -0.12 0.1 0 \nrpy: 1.57075 -0 0"]
+"base_link" -> "camera_joint" [label="xyz: 0.1665 0.025 0.15 \nrpy: 0 0 -1.57079"]
+"camera_joint" -> "camera_link"
+"base_link" -> "gnss_joint" [label="xyz: 0.173 0.165 0.25 \nrpy: 0 -0 0"]
+"gnss_joint" -> "gnss_link"
+"base_link" -> "imu_joint" [label="xyz: 0.173 0.165 0.163 \nrpy: 0 -0 3.14159"]
+"imu_joint" -> "imu_link"
+"base_link" -> "laser_joint" [label="xyz: 0.173 0.13 0.37 \nrpy: 0 -0 0"]
+"laser_joint" -> "laser_link"
+"base_link" -> "left_back_wheel_joint" [label="xyz: -0.027 0.1 0 \nrpy: 0 -0 0"]
 "left_back_wheel_joint" -> "left_back_wheel"
-"base_link" -> "left_front_wheel_joint" [label="xyz: 0.12 0.1 0 \nrpy: 1.57075 -0 0"]
-"left_front_wheel_joint" -> "right_front_wheel"
-"base_link" -> "right_back_wheel_joint" [label="xyz: -0.12 -0.1 0 \nrpy: 1.57075 -0 0"]
+"base_link" -> "left_front_wheel_joint" [label="xyz: -0.027 0.5 0 \nrpy: 0 -0 0"]
+"left_front_wheel_joint" -> "left_front_wheel"
+"base_link" -> "right_back_wheel_joint" [label="xyz: 0.36 0.1 0 \nrpy: 0 -0 0"]
 "right_back_wheel_joint" -> "right_back_wheel"
-"base_link" -> "right_front_wheel_joint" [label="xyz: 0.12 -0.1 0 \nrpy: 1.57075 -0 0"]
-"right_front_wheel_joint" -> "left_front_wheel"
+"base_link" -> "right_front_wheel_joint" [label="xyz: 0.36 0.5 0 \nrpy: 0 -0 0"]
+"right_front_wheel_joint" -> "right_front_wheel"
+"base_link" -> "sensor_joint" [label="xyz: 0.29 0.2 0.15 \nrpy: 0 -0 0"]
+"sensor_joint" -> "sensor_link"
 }
