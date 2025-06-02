@@ -1,12 +1,28 @@
 <?xml version="1.0"?>
 <robot name="mickrobot" xmlns:xacro="http://ros.org/wiki/xacro">
+  <link name="base_footprint">
+    <visual>
+      <geometry>
+        <sphere radius="0.001" />  
+      </geometry>
+      <material name="invisible">
+        <color rgba="0 0 0 0"/>  
+      </material>
+    </visual>
+  </link>
 
+<joint name="base_joint" type="fixed">
+  <parent link="base_footprint"/>
+  <child link="base_link"/>
+  <!-- 假设 base_link 原点在车头，而几何中心在车辆后移 0.2 米且右移 0.1 米的位置 -->
+  <origin xyz="-0.3 -0.1665 0.0" rpy="0 0 0"/>
+</joint>
   <!-- base -->
   <link name="base_link">
     <visual>
-      <origin xyz="0.333 0.6 0" rpy="0 0 3.14159"/>
+      <origin xyz="0 -0.15 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_body.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_body1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -26,10 +42,10 @@
         izz="0.981"/>
     </inertial>
   </link>
-  <!-- right_back_wheel -->
+  <!-- right_back_wheel 0 -0.119 0.111-->
   <link   name="right_back_wheel">
     <visual>
-      <origin xyz="0 -0.119 0.111" rpy="0 1.57079 0"/>
+      <origin xyz="-0.12 0 0.11" rpy="0 1.57079 -1.57079"/>
       <geometry>
         <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -53,13 +69,13 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_back_wheel"/>
-    <origin   xyz="0.36 0.1 0"/>
+    <origin   xyz="0.50 -0.02 -0.03"/>
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- right_front_wheel -->
   <link   name="right_front_wheel">
     <visual>
-      <origin xyz="0 -0.119 0.111" rpy="0 1.57079 0"/>
+      <origin xyz="-0.12 0 0.11" rpy="0 1.57079 -1.57079"/>
       <geometry>
         <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -82,13 +98,13 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_front_wheel"/>
-    <origin   xyz="0.36 0.5 0"/>
+    <origin   xyz="0.1 -0.02 -0.03"/>
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- left_back_wheel -->
   <link   name="left_back_wheel">
     <visual>
-      <origin xyz="0 -0.119 -0.111" rpy="0 -1.57079 0"/>
+      <origin xyz="-0.12 0 -0.11" rpy="0 -1.57079 -1.57079"/>
       <geometry>
         <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -112,14 +128,14 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="left_back_wheel"/>
-    <origin   xyz="-0.027 0.1 0"/>
+    <origin   xyz="0.1 0.32 -0.03"/>
     <limit effort="100"   velocity="100"/>
   </joint>
 
   <!-- left_front_wheel -->
   <link   name="left_front_wheel">
     <visual>
-      <origin xyz="0 -0.119 -0.111" rpy="0 -1.57079 0"/>
+      <origin xyz="-0.12 0 -0.11" rpy="0 -1.57079 -1.57079"/>
       <geometry>
         <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -143,28 +159,28 @@
     <axis xyz="1 0 0"/>   
     <parent   link="base_link"/>
     <child   link="left_front_wheel"/>
-    <origin   xyz="-0.027 0.5 0"/>
+    <origin   xyz="0.49 0.32 -0.03"/>
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- sensor -->
   <link   name="sensor_link">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 3.14159"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_sensorkit.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_sensorkit1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 3.14159"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_sensorkit.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_sensorkit1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
 
     <inertial>
       <mass value="1"/>
-      <origin xyz="-0.12 -0.07 0.09" rpy="0 0 3.14159"/>
+      <origin xyz="-0.12 -0.07 0.09" rpy="0 0 0"/>
       <inertia ixx="0.00333" ixy="0.0" ixz="0.0" iyy="0.00333" iyz="0.0" izz="0.00240"/>
     </inertial>
   </link>
@@ -172,7 +188,7 @@
   <joint   name="sensor_joint" type="fixed">  
     <parent   link="base_link"/>
     <child   link="sensor_link"/>
-    <origin   xyz="0.29 0.20 0.15"/>
+    <origin   xyz="0.29 0.05 0.15"/>
   </joint>
 
   <link name="imu_link">
@@ -201,7 +217,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link" />
     <child link="imu_link" />
-    <origin xyz="0.173 0.165 0.163" rpy="0.0 0.0 3.14159" />
+    <origin xyz="0.40 0.165 0.163" rpy="0.0 0.0 0.0" />
   </joint>
 
   <!-- gnss -->
@@ -231,7 +247,7 @@
   <joint name="gnss_joint" type="fixed">
     <parent link="base_link" />
     <child link="gnss_link" />
-    <origin xyz="0.173 0.165 0.25" rpy="0.0 0.0 0.0" />
+    <origin xyz="0.40 0.165 0.25" rpy="0.0 0.0 0.0" />
   </joint>
 
   <link name="laser_link">
@@ -258,7 +274,7 @@
   <joint name="laser_joint" type="fixed">
       <parent link="base_link" />
       <child link="laser_link" />
-      <origin xyz="0.173 0.13 0.37" />
+      <origin xyz="0.42 0.16 0.37" />
   </joint>
   <!-- camera -->
   <link name="camera_link">
@@ -286,7 +302,7 @@
   <joint name="camera_joint" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <origin xyz="0.1665 0.025 0.15" rpy="0 0 -1.57079"/>
+    <origin xyz="0.53 0.16 0.15" rpy="0 0 0"/>
   </joint>
 
 
