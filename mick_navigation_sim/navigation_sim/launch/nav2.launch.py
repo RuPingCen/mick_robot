@@ -8,8 +8,8 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare  
 
 def generate_launch_description():
-    navigation_pkg = 'navigation'
-    racecar_dir = get_package_share_directory('navigation')
+    navigation_pkg = 'navigation_sim'
+    racecar_dir = get_package_share_directory('navigation_sim')
     racecar_launchr = os.path.join(racecar_dir, 'launch')
     # 统一使用Substitution处理路径
     rviz_config = PathJoinSubstitution([

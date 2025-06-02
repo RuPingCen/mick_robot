@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
-    <name>slam_gmapping</name>
+    <name>slam_gmapping_sim</name>
     <version>0.0.0</version>
     <description>This package contains a ROS2 Crystal Clemmys wrapper for OpenSlam's Gmapping.
         The gmapping package provides laser-based SLAM (Simultaneous Localization and Mapping),

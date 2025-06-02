@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(slam_gmapping)
+project(slam_gmapping_sim)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -42,9 +42,9 @@ endif()
 
 include_directories(include)
 
-add_executable(slam_gmapping src/slam_gmapping.cpp)
+add_executable(slam_gmapping_sim src/slam_gmapping.cpp)
 
-ament_target_dependencies(slam_gmapping
+ament_target_dependencies(slam_gmapping_sim
         rclcpp
         tf2
         tf2_ros
@@ -54,7 +54,7 @@ ament_target_dependencies(slam_gmapping
         tf2_geometry_msgs
         openslam_gmapping)
 
-install(TARGETS slam_gmapping
+install(TARGETS slam_gmapping_sim
         DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch config rviz

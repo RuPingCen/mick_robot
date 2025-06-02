@@ -11,16 +11,16 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='True')
     
     rviz_config_file = PathJoinSubstitution(
-           [FindPackageShare("slam_gmapping"), "rviz", "gmapping.rviz"]
+           [FindPackageShare("slam_gmapping_sim"), "rviz", "gmapping.rviz"]
    )
    
     gmapping_config_file = PathJoinSubstitution(
-           [FindPackageShare("slam_gmapping"), "config", "gmapping_params.yaml"]
+           [FindPackageShare("slam_gmapping_sim"), "config", "gmapping_params.yaml"]
    )
     return LaunchDescription([
         Node(
-            package='slam_gmapping',
-            executable='slam_gmapping',
+            package='slam_gmapping_sim',
+            executable='slam_gmapping_sim',
             name='slam_gmapping',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
