@@ -54,7 +54,7 @@
     </visual>
 
     <collision>
-      <origin xyz="-0 0.04 0" rpy="0 1.57079 -1.57079"/>
+      <origin xyz="-0 0.035 0" rpy="0 1.57079 -1.57079"/>
       <geometry>
         <cylinder radius="0.1016" length="0.06"/>
       </geometry>
@@ -62,7 +62,7 @@
     
     <inertial>  
       <mass value="1"/>
-      <origin xyz="-0. 0.04 0" rpy="0 1.57079 -1.57079"/>
+      <origin xyz="-0. 0.035 0" rpy="0 1.57079 -1.57079"/>
       <inertia ixx="0.00288" ixy="0.0" ixz="0.0" iyy="0.00288" iyz="0.0" izz="0.00516"/>
     </inertial>
   </link>
@@ -75,12 +75,98 @@
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- right_front_wheel -->
-   
+  <link   name="right_front_wheel">
+    <visual>
+      <origin xyz="0.12 0 -0.11" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="-0 0.035 0" rpy="0 1.57079 -1.57079"/>
+      <geometry>
+        <cylinder radius="0.1016" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="-0. 0.035 0" rpy="0 1.57079 -1.57079"/>
+      <inertia ixx="0.00288" ixy="0.0" ixz="0.0" iyy="0.00288" iyz="0.0" izz="0.00516"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="right_front_wheel_joint" type="continuous">
+    <axis xyz="1 0 0"/>
+    <parent   link="base_link"/>
+    <child   link="right_front_wheel"/>
+    <origin   xyz="0.2 -0.24 0.0"/>
+    <limit effort="100"   velocity="100"/>
+  </joint>
   <!-- left_back_wheel -->
-  
+  <link   name="left_back_wheel">
+    <visual>
+      <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 -0.035 0" rpy="0 1.57079 -1.57079"/>
+      <geometry>
+        <cylinder radius="0.1016" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.035 0" rpy="0 1.57079 -1.57079"/>
+      <inertia ixx="0.00288" ixy="0.0" ixz="0.0" iyy="0.00288" iyz="0.0" izz="0.00516"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="left_back_wheel_joint" type="continuous">
+    <axis xyz="1 0 0"/>
+    <parent   link="base_link"/>
+    <child   link="left_back_wheel"/>
+    <origin   xyz="-0.2 0.24 0.0"/>
+    <limit effort="100"   velocity="100"/>
+  </joint> 
 
   <!-- left_front_wheel -->
-   
+     <link   name="left_front_wheel">
+    <visual>
+      <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 -0.035 0" rpy="0 1.57079 -1.57079"/>
+      <geometry>
+        <cylinder radius="0.1016" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.035 0" rpy="0 1.57079 -1.57079"/>
+      <inertia ixx="0.00288" ixy="0.0" ixz="0.0" iyy="0.00288" iyz="0.0" izz="0.00516"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="left_front_wheel_joint" type="continuous">
+    <axis xyz="1 0 0"/>
+    <parent   link="base_link"/>
+    <child   link="left_front_wheel"/>
+    <origin   xyz="0.2 0.24 0.0"/>
+    <limit effort="100"   velocity="100"/>
+  </joint> 
+ 
+ 
   <!-- sensor -->
   <link   name="sensor_link">
     <visual>
