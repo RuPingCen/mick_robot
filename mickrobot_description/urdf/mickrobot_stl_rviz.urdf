@@ -49,7 +49,7 @@
     <visual>
       <origin xyz="0.12 0 -0.11" rpy="0 0 1.57079"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -71,7 +71,7 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_back_wheel"/>
-    <origin   xyz="-0.2 -0.24 0.0"/>
+    <origin   xyz="-0.2 -0.26 0.0"/>
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- right_front_wheel -->
@@ -79,7 +79,7 @@
     <visual>
       <origin xyz="0.12 0 -0.11" rpy="0 0 1.57079"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -101,7 +101,7 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_front_wheel"/>
-    <origin   xyz="0.2 -0.24 0.0"/>
+    <origin   xyz="0.2 -0.26 0.0"/>
     <limit effort="100"   velocity="100"/>
   </joint>
   <!-- left_back_wheel -->
@@ -109,7 +109,7 @@
     <visual>
       <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -131,7 +131,7 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="left_back_wheel"/>
-    <origin   xyz="-0.2 0.24 0.0"/>
+    <origin   xyz="-0.2 0.26 0.0"/>
     <limit effort="100"   velocity="100"/>
   </joint> 
 
@@ -140,7 +140,7 @@
     <visual>
       <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches-2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -162,7 +162,7 @@
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="left_front_wheel"/>
-    <origin   xyz="0.2 0.24 0.0"/>
+    <origin   xyz="0.2 0.26 0.0"/>
     <limit effort="100"   velocity="100"/>
   </joint> 
  
@@ -177,15 +177,15 @@
     </visual>
 
     <collision>
-      <origin xyz="0.05 0.233 0" rpy="0 0 -1.57079 "/>
+      <origin xyz="0.12 0.12 0.1" rpy="0 0 0 "/>
       <geometry>
-        <mesh filename="package://mickrobot_description/urdf/mesh/mickx4_sensorkit.STL" scale="0.001 0.001 0.001"/>
+        <box size="0.09 0.12 0.20"/>
       </geometry>
     </collision>
 
     <inertial>
       <mass value="1"/>
-      <origin xyz="-0.12 -0.07 0.09" rpy="0 0 0"/>
+      <origin xyz="0.12 0.12 0.05" rpy="0 0 0"/>
       <inertia ixx="0.00333" ixy="0.0" ixz="0.0" iyy="0.00333" iyz="0.0" izz="0.00240"/>
     </inertial>
   </link>
@@ -282,6 +282,7 @@
       <child link="laser_link" />
       <origin xyz="0.23 0.0 0.38" />
   </joint>
+
   <!-- camera -->
   <link name="camera_link">
     <visual>
@@ -294,13 +295,13 @@
     <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      <inertia ixx="6.083e-5" ixy="0" ixz="0" iyy="6.083e-5" iyz="0" izz="6.083e-5"/>
     </inertial>
        
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.2 0.09 0.03"/>
+        <box size="0.02 0.09 0.03"/>
       </geometry>
     </collision>
   </link>
@@ -308,7 +309,7 @@
   <joint name="camera_joint" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <origin xyz="0.29 0.0 0.15" rpy="0 0 0"/>
+    <origin xyz="0.29 0.0 0.31" rpy="0 0 0"/>
   </joint>
 
 
