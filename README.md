@@ -16,11 +16,13 @@ mick_robot 是一个开源的自主导航小车项目名称，使用四轮差速
 - **mick_description** : 存放模型文件和URDF文件
 - **mick_navigation**:  move base导航配置文件
 
- # Gazebo仿真环境下控制小车
+ # 1 Gazebo仿真环境下运行小车
 
+安装gazebo环境运行的依赖包
+
+```
 sudo apt install ros-humble-gazebo-ros-pkgs ros-humble-gazebo-plugins
-
-
+```
 
 启动gazebo仿真节点
 
@@ -29,6 +31,7 @@ ros2 launch mickrobot_description gazebo.launch.py
 ```
 启动后节点将发布以下话题
 
+```
 /camera_sensor/camera_info
 /camera_sensor/image_raw
 /cmd_vel
@@ -39,19 +42,20 @@ ros2 launch mickrobot_description gazebo.launch.py
 /performance_metrics
 /robot_description
 /rosout
-/scan
+/scan            
 /sensors/gazebo_ros_gps/vel
 /sensors/gps
 /tf
 /tf_static
+```
 
+<img src="mickrobot_description/fig/gazebo_fig2.gif" alt="gazebo_fig1" style="zoom:100%;" />
 
+# 2 运行实体小车
 
-# 实体小车
+## 2.1 键盘控制小车
 
-## 1 键盘控制小车
-
-### 1.1 下载 
+### 2.1.1 下载节点代码
  ```
   mkdir -p ros2_ws/src
   cd ros2_ws/src
@@ -91,4 +95,15 @@ ros2 run mick_bringup mick_bringup
 ros2 run keyboard keyboard
  ```
 
- 
+## 2.2 运行建图节点
+
+
+
+
+
+## 2.3 运行导航节点
+
+
+
+
+
