@@ -30,7 +30,8 @@ def generate_launch_description():
     spawn_entity_cmd = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-entity', robot_name_in_model, '-file', urdf_model_path],
+        #arguments=['-entity', robot_name_in_model, '-file', urdf_model_path],
+        arguments=['-entity', robot_name_in_model, '-topic', '/robot_description'],
         output='screen'
     )
 
