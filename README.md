@@ -18,6 +18,8 @@ mick_robot 是一个开源的自主导航小车项目名称，使用四轮差速
 
  # 1 Gazebo仿真环境下运行小车
 
+## 1.1 启动Gazebo仿真环境
+
 安装gazebo环境运行的依赖包
 
 ```
@@ -49,9 +51,34 @@ ros2 launch mickrobot_description gazebo.launch.py
 /tf_static
 ```
 
+## 1.2 在Gazebo仿真环境中启动导航测试程序
+
+1.使用gmapping算法建图
+
+```
+ros2 launch slam_gmapping_sim slam_gmapping.launch.py 
+```
+
+（如果不更换world,则不需要建图）
+2.启动gazebo
+
+```
+ros2 launch mickrobot_description gazebo.launch.py 
+```
+
+3.启动导航仿真
+
+```
+ros2 launch navigation_sim nav2.launch.py
+```
+
 <img src="mickrobot_description/fig/gazebo_fig2.gif" alt="gazebo_fig1" style="zoom:100%;" />
 
-# 2 运行实体小车
+## 
+
+
+
+# 2 在实际环境下运行小车
 
 ## 2.1 键盘控制小车
 
