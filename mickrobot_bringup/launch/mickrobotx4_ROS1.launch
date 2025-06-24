@@ -1,0 +1,17 @@
+<launch>
+  <node pkg="mick_bringup" type="mickrobot_bringup" name="mickrobot" output="screen">
+
+	  <param name="dev" value="/dev/ttyUSB0" type="str" />
+	  <param name="baud" value="115200" type="int" />
+	  <param name="time_out" value="1000" type="int" />
+	  <param name="hz" value="100" type="int" />
+
+	  <param name="chassis_type" value="0" type="int" /> <!--0: 差速底盘  1: 麦克纳姆轮底盘 2:阿卡曼转向  3全向-->
+
+	  <param name="sub_cmdvel_topic" value="chassis/cmd_vel" type="str" />
+	  <param name="pub_odom_topic" value="chassis/odom" type="str" />
+	  <param name="pub_imu_topic" value="chassis/Imu" type="str" />
+	  
+	  <param name="is_pub_path" value="1" type="int" /> <!--0: 不发布底盘轨迹  1: 发布 -->
+	</node>
+</launch>

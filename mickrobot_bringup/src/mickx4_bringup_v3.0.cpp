@@ -1,16 +1,4 @@
-/** ROS1环境
- * mickrobot V3 四轮差速底盘， 
- * 1、接收cmd_vel 话题的数据，将其转化成转速指令 
- * 2、然后下发到底盘的STM32控制器中
- *  注意：该四轮差速模型与两轮差速模型相同，发送数据的时候需要把1/2号电机的速度设置为一样
- * 3/4号电机速度设置为一样，
-  * 
- * 增加IMU数据上传
- * 增加超声波上传
- * 
- * maker:crp
- * 2017-5-13
- */
+// 从文件 mickx4_bringup_v3 基础上次修改为ROS2的接口
 
 #include <iostream>
 #include <fstream>
@@ -21,27 +9,34 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
+#include <chrono>
+#include <thread>
 
-#include <ros/ros.h>
-#include <ros/spinner.h>
-#include <std_msgs/String.h>
-#include <sensor_msgs/Imu.h>
-#include <tf/transform_broadcaster.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <geometry_msgs/Twist.h>
-#include <sensor_msgs/Joy.h> 
-#include <serial/serial.h>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "sensor_msgs/msg/imu.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/joy.hpp"
+#include "serial/serial.h"
+//#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <eigen3/Eigen/Geometry> 
- 
-#include <sys/time.h>
 
-#include <mick_chassis_msg.h>
+#include "eigen3/Eigen/Geometry"
+#include "sys/time.h"
+
+#include "mick_chassis_msg.h"
+
+
 
 using namespace std;
- 
 
+
+ 
 int chassis_type = 0; //默认采用差速模式  0：差速  1-麦克纳姆轮  2: Ackermann  3:4WS4WD
 int is_pub_path = 0; //默认不发布小车底盘轨迹  0：不发布   1 发布
 
@@ -53,113 +48,123 @@ float WHEEL_D=0.17; 	   	//轮子直径  6.5寸的轮子
 float WHEEL_R=WHEEL_D/2.0; 			//轮子半径
 float WHEEL_PI=3.141693; 			//pi
 
- 
-nav_msgs::Path path;
+
+nav_msgs::msg::Path path;
 serial::Serial ros_ser;
-ros::Publisher odom_pub,path_pub,imu_pub;
- 
+
+
 volatile rc_info_t rc;
 int rc_init_flags =0;
 unsigned int init_times = 0;
 int sum_offset[4] = {0};
 int show_message =1;
 float RC_MIN = 0, RC_MAX = 2500, RC_K = 1; //遥控器摇杆通道输出的最小值、最大值、比例系数
-ros::Publisher joy_pub;
 
 moto_measure_t moto_chassis[4] = {0};
 moto_measure_t moto_rmd_chassis[4] = {0};
-
 chassis_measure_t mickv3_chassis;
+
 imu_measure_t imu_chassis;  //IMU 数据
 //uint16_t Ultrasonic_data [10];   //超声波数据
 vector<uint16_t> Ultrasonic_data(10,0);
 
-INT32Data motor_upload_counter,total_angle,round_cnt,speed_rpm;
-Int16Data imu,odom;
+union INT32Data //union的作用为实现char数组和int32之间的转换
+{
+    int32_t int32_dat;
+    unsigned char byte_data[4];
+}motor_upload_counter,total_angle,round_cnt,speed_rpm;
+union Int16Data //union的作用为实现char数组和int16数据类型之间的转换
+{
+    int16_t int16_dat;
+    unsigned char byte_data[2];
+}imu,odom;
 
- 
-void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg);
+
+
+
+
+ void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 void send_speed_to_X4chassis(float x,float y,float w);
 void send_rpm_to_chassis( int w1, int w2, int w3, int w4);
 void send_speed_to_4WS4WDchassis(float x,float y,float w );
 void send_speed_to_Ackerchassis(float x,float w );
 
-void send_rpm_to_4WS4WDchassis(vector<float> vw);
+void send_rpm_to_4WS4WDchassis(const rclcpp::Node::SharedPtr node,vector<float> vw);
 
 void clear_odometry_chassis(void);
-bool analy_uart_recive_data( std_msgs::String serial_data);
+bool analy_uart_recive_data(std_msgs::msg::String serial_data,
+								rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub);
 void calculate_position_for_odometry(void);
-void calculate_chassisDiffX4_position_for_odometry(void);
-void calculate_chassisAckermann_position_for_odometry(void);
-void calculate_chassisAckermann2_position_for_odometry(void);
-void publish_odomtery(float  position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
-void publish_imu(imu_measure_t& imu_m);
-bool publish_joy_msg(void);
-int calculate_rc_offset(void);
+void calculate_chassisDiffX4_position_for_odometry(rclcpp::Node::SharedPtr node,
+						rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+								rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub);
+void calculate_chassisAckermann_position_for_odometry(rclcpp::Node::SharedPtr node,
+						rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+								rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub);
+void calculate_chassisAckermann2_position_for_odometry(const rclcpp::Node::SharedPtr node,
+														rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+															rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub);
+void publish_odomtery(rclcpp::Node::SharedPtr node,rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+						rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub,
+							float position_x,float position_y,float oriention,float vel_linear_x,float vel_linear_y,float vel_linear_w);
+void publish_imu(imu_measure_t& imu_m,rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub);
+bool publish_joy_msg(rclcpp::Node::SharedPtr node,rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub);
+int calculate_rc_offset(rclcpp::Node::SharedPtr node);
 
 
-int main(int argc,char** argv)
+int main(int argc, char ** argv)
 {
     string out_result;
     bool uart_recive_flag;
+
+    string sub_cmdvel_topic = "cmd_vel";
+    string pub_odom_topic = "odom";
+    string pub_imu_topic = "Imu";
+    string dev = "/dev/ttyUSB0";
+    string joy_topic = "rc_remotes/joy";
+
+    int baud = 115200;
+    int time_out = 1000;
+    int hz = 100;
  
-//     unsigned char buf[200];                      //定义字符串长度
-//     boost::asio::io_service iosev;
-//     serial_port sp(iosev, "/dev/ttyUSB0");         //定义传输的串口
-//     sp.set_option(serial_port::baud_rate(115200));
-//     sp.set_option(serial_port::flow_control());
-//     sp.set_option(serial_port::parity());
-//     sp.set_option(serial_port::stop_bits());
-//     sp.set_option(serial_port::character_size(8));
+
+    rclcpp::init(argc,argv);
+
+    auto node = std::make_shared<rclcpp::Node>("mick_robot");
+
+    node->declare_parameter<std::string>("sub_cmdvel_topic",sub_cmdvel_topic);
+    node->declare_parameter<std::string>("pub_odom_topic",pub_odom_topic);
+    node->declare_parameter<std::string>("pub_imu_topic",pub_imu_topic);
+    node->declare_parameter<std::string>("dev",dev);
+
+    node->declare_parameter<int>("baud",baud);
+    node->declare_parameter<int>("time_out",time_out);
+    node->declare_parameter<int>("hz",hz);
+    node->declare_parameter<int>("is_pub_path",is_pub_path);
+    node->declare_parameter<int>("chassis_type",chassis_type);
+
+    node->declare_parameter<std::string>("joy_topic",joy_topic);
+    node->declare_parameter<float>("RC_K",RC_K);
+    node->declare_parameter<float>("RC_MIN",RC_MIN);
+    node->declare_parameter<float>("RC_MAX",RC_MAX);
+
+	RCLCPP_INFO_STREAM(node->get_logger(),"sub_cmdvel_topic:   "<<sub_cmdvel_topic);
+	RCLCPP_INFO_STREAM(node->get_logger(),"pub_odom_topic:   "<<pub_odom_topic);
+	RCLCPP_INFO_STREAM(node->get_logger(),"pub_imu_topic:   "<<pub_imu_topic);
  
-    string sub_cmdvel_topic,pub_odom_topic,pub_imu_topic,dev,joy_topic;
-	int baud,time_out,hz;
- 	ros::init(argc, argv, "mick robot");
-	ros::NodeHandle n("~");
-	 
-	n.param<std::string>("sub_cmdvel_topic", sub_cmdvel_topic, "cmd_vel");
-	n.param<std::string>("pub_odom_topic", pub_odom_topic, "odom");
-	n.param<std::string>("pub_imu_topic", pub_imu_topic, "Imu");
-	n.param<std::string>("dev", dev, "/dev/ttyUSB0");
-	n.param<int>("baud", baud, 115200);
-	n.param<int>("time_out", time_out, 1000);
-	n.param<int>("hz", hz, 100);
-	n.param<int>("is_pub_path", is_pub_path, 0); // 默认不发布小车底盘轨迹
-	n.param<int>("chassis_type", chassis_type, 3); //  
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_K:   " << RC_K);
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_MIN:   " << RC_MIN);
+	RCLCPP_INFO_STREAM(node->get_logger(),"RC_MAX:   " << RC_MAX);
 
-	n.param<std::string>("joy_topic", joy_topic, "rc_remotes/joy");
-	n.param<float>("RC_K", RC_K, 1);
-	n.param<float>("RC_MIN", RC_MIN, 0);
-	n.param<float>("RC_MAX", RC_MAX, 2500);
+	auto command_sub = node->create_subscription<geometry_msgs::msg::Twist>(sub_cmdvel_topic, 10, cmd_vel_callback);
 
-	
-	ROS_INFO_STREAM("sub_cmdvel_topic:   "<<sub_cmdvel_topic);
-	ROS_INFO_STREAM("pub_odom_topic:   "<<pub_odom_topic);
-	ROS_INFO_STREAM("pub_imu_topic:   "<<pub_imu_topic);
-	ROS_INFO_STREAM("dev:   "<<dev);
-	ROS_INFO_STREAM("baud:   "<<baud);
-	ROS_INFO_STREAM("time_out:   "<<time_out);
-	ROS_INFO_STREAM("hz:   "<<hz);
-	ROS_INFO_STREAM("is_pub_path:   "<<chassis_type<<"\t  0:No  1:Yes"); 
-	ROS_INFO_STREAM("chassis_type:   "<<chassis_type<<"\t  0:X4  1:M4  2: Ackermann  3:4WS4WD"); 
+    auto joy_pub = node->create_publisher<sensor_msgs::msg::Joy>(joy_topic,20);
+    auto imu_pub = node->create_publisher<sensor_msgs::msg::Imu>(pub_imu_topic,rclcpp::QoS(20).transient_local());
+    auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>(pub_odom_topic,20);
+    auto path_pub = node->create_publisher<nav_msgs::msg::Path>(pub_odom_topic+"/path",rclcpp::QoS(20).transient_local());
 
-	ROS_INFO_STREAM("RC_K:   " << RC_K);
-	ROS_INFO_STREAM("RC_MIN:   " << RC_MIN);
-	ROS_INFO_STREAM("RC_MAX:   " << RC_MAX);
-	
-	//订阅主题command
-	ros::Subscriber command_sub = n.subscribe(sub_cmdvel_topic, 10, cmd_vel_callback);
-	//发布主题sensor
-	// ros::Publisher sensor_pub = n.advertise<std_msgs::String>("sensor", 1000);
-	
-	joy_pub = n.advertise<sensor_msgs::Joy>(joy_topic, 20);
-	imu_pub = n.advertise<sensor_msgs::Imu>(pub_imu_topic,20, true);
-	odom_pub= n.advertise<nav_msgs::Odometry>(pub_odom_topic, 20); //定义要发布/odom主题
-	path_pub = n.advertise<nav_msgs::Path>(pub_odom_topic+"/path",20, true);
-	
-	// 开启串口模块
-	 try
-	 {
+ 	try
+	{
 		ros_ser.setPort(dev);
 		ros_ser.setBaudrate(baud);
 		serial::Timeout to = serial::Timeout::simpleTimeout(1000);
@@ -170,45 +175,41 @@ int main(int argc,char** argv)
 		ros_ser.setTimeout(to);
 		ros_ser.open();
 		ros_ser.flushInput(); //清空缓冲区数据
-	 }
-	 catch (serial::IOException& e)
-	 {
-		ROS_ERROR_STREAM("Unable to open port ");
+	}
+	catch (serial::IOException& e)
+	{
+		cout<<"Unable to open port "<<endl;
 		return -1;
 	}
 	if(ros_ser.isOpen())
 	{
 		ros_ser.flushInput(); //清空缓冲区数据
-		ROS_INFO_STREAM("Serial Port opened");
+		cout<<"Serial Port opened"<<endl;
 	}
 	else
 	{
-	    return -1;
+		return -1;
 	}
- 
-	ros::Rate loop_rate(hz);
-   
-    while(ros::ok())
-    { 
+
+    rclcpp::Rate loop_rate(hz);
+
+    while (rclcpp::ok())
+    {
 		if(ros_ser.available() )
 		{
 			//ROS_INFO_STREAM("Reading from serial port");
-			std_msgs::String serial_data;
+			std_msgs::msg::String serial_data;
 			//获取串口数据
 			serial_data.data = ros_ser.read(ros_ser.available());
 			//cout<<serial_data.data << "\n"<<endl;
-			uart_recive_flag = analy_uart_recive_data(serial_data);
+			uart_recive_flag = analy_uart_recive_data(serial_data,imu_pub);
 			if(uart_recive_flag)
 			{
 				uart_recive_flag=0;
 				if(chassis_type == 0 || chassis_type == 1)
 				{
-					calculate_chassisDiffX4_position_for_odometry();
+					calculate_chassisDiffX4_position_for_odometry(node,odom_pub,path_pub);
 					//calculate_position_for_odometry();
-				}
-				else if(chassis_type == 2)
-				{
-					 calculate_chassisAckermann_position_for_odometry();
 				}
 				else
 				{
@@ -218,24 +219,26 @@ int main(int argc,char** argv)
 			}
 			else
 			{
-				ROS_WARN_STREAM(" analy uart recive data error ...");
+				RCLCPP_INFO_STREAM(node->get_logger()," analy uart recive data error ...");
 				//serial_data.data = ros_ser.read(ros_ser.available());
 				ros_ser.flushInput(); //清空缓冲区数据
-				sleep(0.2);            //延时0.1秒,确保有数据进入
+				//sleep(0.2);            //延时0.2秒,确保有数据进入
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
 			}
 		}
-		ros::spinOnce();
-		loop_rate.sleep();	
+        rclcpp::spin_some(node);
+        loop_rate.sleep();
     }
-   
     std::cout<<" EXIT ..."<<std::endl;
-    ros::waitForShutdown();
-    ros::shutdown();
-    return 1;
+    rclcpp::shutdown();
+    return 0;
 }
-void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
+
+
+void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-	//ROS_INFO_STREAM("Write to serial port" << msg->data);
+    //ROS_INFO_STREAM("Write to serial port" << msg->data);
 	// ostringstream os;
 	float speed_x,speed_y,speed_w;
 	float v1=0,v2=0,v3=0,v4=0;
@@ -249,13 +252,15 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 	speed_w = msg->angular.z;
   
 
+	
 	if(chassis_type == 0) //mick-v3 差速模式
 	{
-		send_speed_to_X4chassis(speed_x,speed_y,speed_w);
+		send_speed_to_X4chassis( speed_x,speed_y,speed_w);
 		return ;
 	}
 	else if(chassis_type == 1) // 麦克纳姆轮模式
 	{
+		float v1=0,v2=0,v3=0,v4=0;
 		v1 = speed_x-speed_y-WHEEL_K*speed_w;       //转化为每个轮子的线速度
 		v2 = speed_x+speed_y-WHEEL_K*speed_w;
 		v3 =-(speed_x-speed_y+WHEEL_K*speed_w);
@@ -265,29 +270,28 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg)
 		v2 =v2/(WHEEL_D*WHEEL_PI)*60;
 		v3 =v3/(WHEEL_D*WHEEL_PI)*60;
 		v4 =v4/(WHEEL_D*WHEEL_PI)*60;
-		send_rpm_to_chassis(v1,v2,v3,v4);
-
+		//send_rpm_to_chassis(v1,v2,v3,v4);
 	}
 	else if(chassis_type == 2) // 阿卡曼模式
 	{
-		send_speed_to_Ackerchassis(speed_x, speed_w); //直接发送目标速度 和 角速度
+		//send_speed_to_Ackerchassis(speed_x, speed_w); //直接发送目标速度 和 角速度
 		//ROS_INFO_STREAM("send_speed_to_Ackerchassis: "<<speed_x<<"  "<<speed_w);
 		return ;
 	}
 	else if(chassis_type == 3) // 4WS4WD模式
 	{
-		send_speed_to_4WS4WDchassis(speed_x,speed_y,speed_w);
-		ROS_INFO_STREAM("send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w);
+		//send_speed_to_4WS4WDchassis(speed_x,speed_y,speed_w);
+		// RCLCPP_INFO_STREAM(node->get_logger(),"send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w);
+		cout << "send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w << endl;
 		return ;
 	}
 	else
 	{
-		ROS_WARN_STREAM("unknown chassis type ! ");
+		// RCLCPP_INFO_STREAM(node->get_logger(),"unknown chassis type ! ");
+		cout << "unknown chassis type ! " << endl;
 	}
-
  
- //send_rpm_to_chassis(200,200,200,200);	
-  }
+}
 
 /**
  * @function  发送四个点击的转速到底盘控制器
@@ -330,6 +334,7 @@ void send_rpm_to_chassis( int w1, int w2, int w3, int w4)
 
 	ros_ser.write(data_tem,counter);
 }
+
 // 差速小车
 void send_speed_to_X4chassis(float x,float y,float w)
 {
@@ -360,7 +365,6 @@ void send_speed_to_X4chassis(float x,float y,float w)
 	data_tem[counter++] =0xFE;
 	ros_ser.write(data_tem,counter);
 }
- 
 
 void send_speed_to_Ackerchassis(float x,float w)
 {
@@ -391,10 +395,7 @@ void send_speed_to_Ackerchassis(float x,float w)
   data_tem[counter++] =0xFE;
   ros_ser.write(data_tem,counter);
 }
-/**
- * @function  发送X Y 方向的速度 以及旋转角速度
- * ＠param  X Y 单位 m/s    w  单位　rad/s
- */
+
 void send_speed_to_4WS4WDchassis(float x,float y,float w)
 {
   uint8_t data_tem[50];
@@ -430,11 +431,12 @@ void send_speed_to_4WS4WDchassis(float x,float y,float w)
  * 电机的转速 单位　RPM
  * 角度    单位  °度
 **********************************************************/
-void send_rpm_to_4WS4WDchassis(vector<float> vw)
+void send_rpm_to_4WS4WDchassis(const rclcpp::Node::SharedPtr node,vector<float> vw)
 {
 	if(vw.size()<12)
 	{	
-		ROS_WARN_STREAM("For 4ws4wd chasiss, the length of vm < 12");
+        
+		RCLCPP_INFO_STREAM(node->get_logger(),"For 4ws4wd chasiss, the length of vm < 12");
 		return;
 	}
 
@@ -508,12 +510,13 @@ void clear_odometry_chassis(void)
  ros_ser.write(data_tem,counter);
   
 }
- 
+
 /**
  * @function 解析串口发送过来的数据帧
  * 成功则返回true　否则返回false
  */
-bool analy_uart_recive_data( std_msgs::String serial_data)
+bool analy_uart_recive_data(std_msgs::msg::String serial_data,
+								rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub)
 {
 	unsigned char reviced_tem[500];
 	uint16_t len=0,i=0,j=0;
@@ -523,8 +526,8 @@ bool analy_uart_recive_data( std_msgs::String serial_data)
 	len=serial_data.data.size();
 	if(len<1 || len>500)
 	{
-		ROS_INFO_STREAM("serial data is too short ,  len: " << serial_data.data.size() );
-		std_msgs::String serial_data;
+		std::cout<<"serial data is too short ,  len: " << serial_data.data.size()<<std::endl;
+		std_msgs::msg::String serial_data;
 		string str_tem;
 
 		serial_data.data = ros_ser.read(ros_ser.available());
@@ -661,7 +664,7 @@ bool analy_uart_recive_data( std_msgs::String serial_data)
 				imu.int16_dat=0;imu.byte_data[1] = reviced_tem[i++] ; imu.byte_data[0] = reviced_tem[i++] ;
 				imu_chassis.yaw = imu.int16_dat/100.0f;
 				
-				publish_imu(imu_chassis);
+				publish_imu(imu_chassis,imu_pub);
 				//ROS_INFO_STREAM("recived imu  data" ); 
 			}
 			else if (reviced_tem[3+step] ==0xA1 )
@@ -677,7 +680,7 @@ bool analy_uart_recive_data( std_msgs::String serial_data)
 					ultra_tem=reviced_tem[i++]*256; 		ultra_tem = ultra_tem+reviced_tem[i++];
 					Ultrasonic_data.push_back(ultra_tem);
 				}
-				ROS_INFO_STREAM("recived Ulrat  data" ); 
+				printf("recived Ulrat  data" ); 
 			}
 			else if (reviced_tem[3 + step] == 0xA3)
 			{
@@ -704,7 +707,7 @@ bool analy_uart_recive_data( std_msgs::String serial_data)
 				}
 				else
 				{
-					ROS_WARN_STREAM("rc.chx < RC_MIN || rc.chx > RC_MAX");
+					printf("rc.chx < RC_MIN || rc.chx > RC_MAX");
 				}
 				// if(show_message)
 				// {
@@ -727,13 +730,14 @@ bool analy_uart_recive_data( std_msgs::String serial_data)
 		}
 		else
 		{
-		ROS_WARN_STREAM("frame head is wrong" ); 
+		  printf("frame head is wrong" ); 
 			return  false;	
 		}
 		step+=len; 
 	}
 	return  true;	         
 }
+
 /**
  * @function 利用里程计数据实现位置估计
  * 
@@ -746,8 +750,11 @@ static int motor_init_flag = 0;
 double last_time=0, curr_time =0;
 // 差速底盘  速度计算    安普斯电机
 // 仅仅只是前轮转向模式
-void calculate_chassisDiffX4_position_for_odometry(void)
+void calculate_chassisDiffX4_position_for_odometry(rclcpp::Node::SharedPtr node,
+						rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+								rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub)
 {
+    rclcpp::Clock clock;
 	float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
 	float linear_x,linear_y,linear_w;
 		
@@ -756,7 +763,8 @@ void calculate_chassisDiffX4_position_for_odometry(void)
 		position_x = 0 ; 
 		position_y =0 ; 
 		position_w =0 ; 
-		curr_time = ros::Time::now().toSec();
+		curr_time = clock.now().seconds();
+
 		last_time =  curr_time;
 		motor_init_flag++;//保证程序只进入一次
 		return ;
@@ -782,7 +790,7 @@ void calculate_chassisDiffX4_position_for_odometry(void)
 		linear_w=0;	
 	}
 
-	curr_time = ros::Time::now().toSec();
+	curr_time = clock.now().seconds();
 	double dt = curr_time - last_time;
 	if(dt>1)
 		dt = 0;
@@ -807,13 +815,16 @@ void calculate_chassisDiffX4_position_for_odometry(void)
 	else;
 
  	//ROS_INFO_STREAM("  position_x:  "<<position_x<<"  position_y:  "<<position_y<<"   position_w: " <<position_w); 
-    publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
+    publish_odomtery( node ,odom_pub,path_pub,position_x,position_y,position_w,linear_x,linear_y,linear_w);
     
 }
 // Ackerman底盘  速度计算
 // 仅仅只是前轮转向模式
-void calculate_chassisAckermann_position_for_odometry(void)
+void calculate_chassisAckermann_position_for_odometry(rclcpp::Node::SharedPtr node,
+						rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+								rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub)
 {
+  rclcpp::Clock clock;
   float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
   float linear_x,linear_y,linear_w;
 	 
@@ -822,7 +833,7 @@ void calculate_chassisAckermann_position_for_odometry(void)
 		position_x = 0 ; 
 		position_y =0 ; 
 		position_w =0 ; 
-		curr_time = ros::Time::now().toSec();
+		curr_time = clock.now().seconds();
 		last_time =  curr_time;
 		motor_init_flag++;//保证程序只进入一次
 		return ;
@@ -836,13 +847,13 @@ void calculate_chassisAckermann_position_for_odometry(void)
 	linear_y = 0;
 	linear_w =( v_r-v_l)/0.796; // 左右侧轮距 0.796             前后轮距 0.8083
 
-	curr_time = ros::Time::now().toSec();
+	curr_time = clock.now().seconds();
 	double dt = curr_time - last_time;
 	if(dt>1)
 		dt = 0;
 	last_time =  curr_time;
 
-	ROS_INFO_STREAM("  dt:  "<<dt<<"  vx:  "<<linear_x<<"   vy: " <<linear_y<<"   vw: " <<linear_w);
+    RCLCPP_INFO_STREAM(node->get_logger(), "dt: " << dt << " vx: " << linear_x << " vy: " << linear_y << " vw: " << linear_w);
 
    
 	position_x=position_x+cos(position_w)*linear_x*dt;
@@ -859,13 +870,16 @@ void calculate_chassisAckermann_position_for_odometry(void)
   }
   else;
 
- 	ROS_INFO_STREAM("  position_x:  "<<position_x<<"  position_y:  "<<position_y<<"   position_w: " <<position_w); 
-    publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
+ 	RCLCPP_INFO_STREAM(node->get_logger(),"  position_x:  "<<position_x<<"  position_y:  "<<position_y<<"   position_w: " <<position_w); 
+    publish_odomtery(node ,odom_pub,path_pub,position_x,position_y,position_w,linear_x,linear_y,linear_w);
     
 }
 //针对前后转向的 阿卡曼模型
-void calculate_chassisAckermann2_position_for_odometry(void)
+void calculate_chassisAckermann2_position_for_odometry(rclcpp::Node::SharedPtr node,
+						rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+								rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub)
 {
+    rclcpp::Clock clock;
 	float position_x_delta,position_y_delta,position_w_delta,position_r_delta;
 	float linear_x,linear_y,linear_w;
 		
@@ -874,7 +888,7 @@ void calculate_chassisAckermann2_position_for_odometry(void)
 		position_x = 0 ; 
 		position_y =0 ; 
 		position_w =0 ; 
-		curr_time = ros::Time::now().toSec();
+		curr_time = clock.now().seconds();
 		last_time =  curr_time;
 		motor_init_flag++;//保证程序只进入一次
 		return ;
@@ -905,13 +919,13 @@ void calculate_chassisAckermann2_position_for_odometry(void)
 	linear_w =  m1*v_1 + m2*v_2 + m3*v_3 + m4*v_4;
 
 	// 利用轮子的转速来推算
-	curr_time = ros::Time::now().toSec();
+	curr_time = clock.now().seconds();
 	double dt = curr_time - last_time;
 	if(dt>1)
 		dt = 0;
 	last_time =  curr_time;
 
-	ROS_INFO_STREAM("  dt:  "<<dt<<"  vx:  "<<linear_x<<"   vy: " <<linear_y<<"   vw: " <<linear_w);
+	RCLCPP_INFO_STREAM(node->get_logger(),"  dt:  "<<dt<<"  vx:  "<<linear_x<<"   vy: " <<linear_y<<"   vw: " <<linear_w);
 
 
 	position_x=position_x+cos(position_w)*linear_x*dt;
@@ -928,27 +942,33 @@ void calculate_chassisAckermann2_position_for_odometry(void)
 	}
 	else;
 
- 	ROS_INFO_STREAM("  position_x:  "<<position_x<<"  position_y:  "<<position_y<<"   position_w: " <<position_w); 
-    publish_odomtery( position_x,position_y,position_w,linear_x,linear_y,linear_w);
+ 	RCLCPP_INFO_STREAM(node->get_logger(),"  position_x:  "<<position_x<<"  position_y:  "<<position_y<<"   position_w: " <<position_w); 
+    publish_odomtery(node ,odom_pub,path_pub,position_x,position_y,position_w,linear_x,linear_y,linear_w);
     
 }
 /**
  * @function 发布里程计的数据
  * 
  */
-void publish_odomtery(float  position_x,float position_y,float oriention,
-						float vel_linear_x,float vel_linear_y,float vel_linear_w)
+void publish_odomtery(rclcpp::Node::SharedPtr node,rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub,
+						rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub,
+							float  position_x,float position_y,float oriention,
+								float vel_linear_x,float vel_linear_y,float vel_linear_w)
 {
-	static tf::TransformBroadcaster odom_broadcaster;  //定义tf对象
-	geometry_msgs::TransformStamped odom_trans;  //创建一个tf发布需要使用的TransformStamped类型消息
-	geometry_msgs::Quaternion odom_quat;   //四元数变量
-	nav_msgs::Odometry odom;  //定义里程计对象
+	rclcpp::Clock clock;
+	// static tf::TransformBroadcaster odom_broadcaster;  //定义tf对象
+    static std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+
+    geometry_msgs::msg::TransformStamped odom_trans;  //创建一个tf发布需要使用的TransformStamped类型消息
+    geometry_msgs::msg::Quaternion odom_quat;   //四元数变量
+    nav_msgs::msg::Odometry odom;  //定义里程计对象
+
 		
 	//里程计的偏航角需要转换成四元数才能发布
-	odom_quat = tf::createQuaternionMsgFromYaw(oriention);//将偏航角转换成四元数
+	odom_quat = tf2::toMsg(tf2::Quaternion(0, 0, std::sin(oriention / 2), std::cos(oriention / 2)));
 
 	//载入坐标（tf）变换时间戳
-	odom_trans.header.stamp = ros::Time::now();
+	odom_trans.header.stamp = clock.now();
 	//发布坐标变换的父子坐标系
 	odom_trans.header.frame_id = "odom";     
 	odom_trans.child_frame_id = "base_link";       
@@ -958,10 +978,10 @@ void publish_odomtery(float  position_x,float position_y,float oriention,
 	odom_trans.transform.translation.z = 0.0;
 	odom_trans.transform.rotation = odom_quat;        
 	//发布tf坐标变化
-	odom_broadcaster.sendTransform(odom_trans);
+	odom_broadcaster->sendTransform(odom_trans);
 
 	//载入里程计时间戳
-	odom.header.stamp = ros::Time::now(); 
+	odom.header.stamp = clock.now();
 	//里程计的父子坐标系
 	odom.header.frame_id = "odom";
 	odom.child_frame_id = "base_link";       
@@ -975,25 +995,26 @@ void publish_odomtery(float  position_x,float position_y,float oriention,
 	odom.twist.twist.linear.y = vel_linear_y;
 	odom.twist.twist.angular.z = vel_linear_w;    
 	//发布里程计
-	odom_pub.publish(odom);
+	odom_pub->publish(odom);
 
 	if(is_pub_path)
 	{
 		//发布小车里程计数据推算的轨迹
-		geometry_msgs::PoseStamped this_pose_stamped;
+		geometry_msgs::msg::PoseStamped this_pose_stamped;
 		this_pose_stamped.pose = odom.pose.pose;
 
 		path.header.stamp=odom.header.stamp;
 		path.header.frame_id="odom";
 		path.poses.push_back(this_pose_stamped);
-		path_pub.publish(path);
+		path_pub->publish(path);
 	}
 }
-void publish_imu(imu_measure_t& imu_m)
+void publish_imu(imu_measure_t& imu_m,rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub)
 {
-	sensor_msgs::Imu IMU_msg;  //定义里程计对象
+	rclcpp::Clock clock;
+	sensor_msgs::msg::Imu IMU_msg;  //定义里程计对象
 	//载入时间戳
-	IMU_msg.header.stamp = ros::Time::now(); 
+	IMU_msg.header.stamp = clock.now();
 	IMU_msg.header.frame_id = "imu";        
 
 	Eigen::Vector3d ea0(imu_m.roll * M_PI / 180.0,
@@ -1027,32 +1048,32 @@ void publish_imu(imu_measure_t& imu_m)
 	// IMU_msg.linear_acceleration.z = imu_m.az/accel*9.8; 
  
 	//发布IMU
-	imu_pub.publish(IMU_msg);	 
+	imu_pub->publish(IMU_msg);	 
 }
 // 发布遥控器数据
-bool publish_joy_msg(void)
+bool publish_joy_msg(rclcpp::Node::SharedPtr node,rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub)
 {
 	if(rc.update != 0x01)
 	{
-		ROS_WARN_STREAM("rc.update != 0x01 ");
+		RCLCPP_WARN_STREAM(node->get_logger(),"rc.update != 0x01 ");
 		return false;
 	}
 
 	// 0 未标定   1 标定中   2标定完成
 	if(rc_init_flags != 2)
 	{
-		ROS_WARN_STREAM("rc.state != 0x02");
-		int flag = calculate_rc_offset();
+		RCLCPP_WARN_STREAM(node->get_logger(),"rc.state != 0x02");
+		int flag = calculate_rc_offset(node);
 		//ROS_WARN_STREAM("flag "<<flag<<"  rc.state "<<rc.state);
 		if(flag == 0)
 		{
 			rc_init_flags = 0 ;
-			ROS_WARN_STREAM("calculate_rc_offset failed .... ");
+			RCLCPP_WARN_STREAM(node->get_logger(),"calculate_rc_offset failed .... ");
 		}
 		else if(flag == 1)
 		{
 			rc_init_flags =1 ;
-			ROS_WARN_STREAM("initial .... ");
+			RCLCPP_WARN_STREAM(node->get_logger(),"initial .... ");
 		}
 	}
 	else
@@ -1079,14 +1100,14 @@ bool publish_joy_msg(void)
 			ch4 =(rc.ch4 - rc.ch4_offset) / (RC_MAX - rc.ch4_offset);
 			if(abs(ch4)<0.2) ch4=0;
 
-			sensor_msgs::Joy joy_msg;
+			sensor_msgs::msg::Joy joy_msg;
 			joy_msg.axes.push_back(RC_K *rc_k*ch1);
 			joy_msg.axes.push_back(RC_K *rc_k*ch2);
 			joy_msg.axes.push_back(RC_K *rc_k*ch3);
 			joy_msg.axes.push_back(RC_K *rc_k*ch4);
 			joy_msg.buttons.push_back(rc.sw1);
 			joy_msg.buttons.push_back(rc.sw2);
-			joy_pub.publish(joy_msg);
+			joy_pub->publish(joy_msg);
  
 			return 1;
 		}
@@ -1096,7 +1117,7 @@ bool publish_joy_msg(void)
 	return 1;
 }
 // 计算遥控器的中位值
-int calculate_rc_offset(void)
+int calculate_rc_offset(rclcpp::Node::SharedPtr node)
 {
 	int re_flag = 0;
 	if(init_times < 20)
@@ -1111,7 +1132,7 @@ int calculate_rc_offset(void)
 			rc.available = 0;
 			rc_init_flags = 1; // 0 未标定   1 标定中   2标定完成
 			init_times++;
-			ROS_WARN_STREAM("calibrate...");
+			RCLCPP_WARN_STREAM(node->get_logger(),"calibrate...");
 			re_flag = 1;
 		}
 	}
@@ -1121,7 +1142,7 @@ int calculate_rc_offset(void)
 		rc.ch2_offset = sum_offset[1] / init_times;
 		rc.ch3_offset = sum_offset[2] / init_times;
 		rc.ch4_offset = sum_offset[3] / init_times;
-		ROS_INFO_STREAM("ch1_offset: " <<rc. ch1_offset << " ch2_offset: " << rc.ch2_offset
+		RCLCPP_INFO_STREAM(node->get_logger(),"ch1_offset: " <<rc. ch1_offset << " ch2_offset: " << rc.ch2_offset
 				 << "ch3_offset: " <<rc. ch3_offset << " ch4_offset: " << rc.ch4_offset);
 		if (rc.ch1_offset == 0 || rc.ch2_offset == 0 || rc.ch3_offset == 0 || rc.ch4_offset == 0)
 		{
@@ -1132,14 +1153,14 @@ int calculate_rc_offset(void)
 			sum_offset[1] = 0;
 			sum_offset[2] = 0;
 			sum_offset[3] = 0;
-			ROS_WARN_STREAM("calibrate faild...");
+			RCLCPP_WARN_STREAM(node->get_logger(),"calibrate faild...");
 			re_flag = 0;
 		}
 		else
 		{
 			rc.available = 1;
 			rc_init_flags = 0x02;
-			ROS_INFO_STREAM("remote calibrate successful");
+			RCLCPP_INFO_STREAM(node->get_logger(),"remote calibrate successful");
 			re_flag = 2; //标定成功
 		}
 	}

@@ -1,5 +1,7 @@
 # ROS小车节点
 
+仅小车底盘节点（**mickrobot_bringup**）同时支持ROS1和ROS2环境。
+
 ## 1.环境说明
 
 ##### 该节点使用的是ROS2的Galactic版本，使用鱼香ROS的一键安装，按照步骤来即可
@@ -39,6 +41,7 @@ sudo make install
     ```
     cd ~/ros2_ws
     colcon build
+    sourse install/setup.bash
     ```
     
 3. 在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
@@ -49,7 +52,6 @@ sudo make install
 4. 最后在编译无报错之后就可以运行了:
 
     ```
-    sourse install/setup.bash
     ros2 launch mick_bringup mickrobotx4.launch.py
     ```
 
@@ -73,8 +75,6 @@ ros2 run keyboard keyboard
 
 ## 3. ROS1节点
 
-默认编译环境是ROS2的，使用ROS1的代码节点需要修改 **mick_robot/mickrobot_bringup/CMakeLists.txt**文件。
-
 ### 3.1 编译ROS1代码
 
  **step1:** 将ROS_Node中的mick_bringup目标代码拷贝到ROS工作空间进行编译
@@ -83,6 +83,7 @@ ros2 run keyboard keyboard
 cp -r mick_bringup ~/catkin_ws/src
 cd ~/catkin_ws/src
 catkin_make
+source devel/setup.bash
 ```
 
 **step2**： 通过USB转232串口线连接电脑和小车控制板，
@@ -105,7 +106,7 @@ sudo cp ultrasonic.rules /etc/udev/rules.d/
 **step3:** 启动ROS节点
 
 ```shell
-roslaunch mick_bringup mickrobot_v3.launch
+roslaunch mick_bringup mickrobotx4_ROS1.launch
 ```
 
 小车节点启动以后可以通过rostopic list命令查看到该ROS节点会对外发布如下Topic
