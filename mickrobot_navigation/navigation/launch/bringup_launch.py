@@ -47,14 +47,13 @@ def generate_launch_description():
 
 
     lifecycle_nodes = [
-        # 'controller_server',
-        # 'smoother_server',
+        #'map_server',
+        #'amcl',
+        'controller_server',
         'planner_server',
         # 'behavior_server',
-        'bt_navigator',
-        # 'waypoint follower'
-        # 'velocity smoother'
-        
+        'bt_navigator', 
+        #'waypoint_follower'          
         # Map fully qualified names
     ]   
 
@@ -116,7 +115,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        default_value=os.path.join(bringup_dir, 'params', 'nav_gazebo.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(

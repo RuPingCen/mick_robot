@@ -55,6 +55,16 @@ ros2 launch mickrobot_description gazebo.launch.py
 
 注：需要将mickrobot_description/urdf/mickrobot_stl.urdf文件中的3D 模型的路径修改为自己电脑上文件存放路径
 
+由于ROS2环境下Fast DDS与nav2的兼容性不是很好，需要修改默认dds为 Cyclone DDS。 首先，安装Cyclone DDS
+
+```
+sudo apt install ros-humble-rmw-cyclonedds-cpp
+```
+
+配置环境变量使ROS2 使用Cyclone DDS来替代默认的 DDS。 
+
+可以在 .bahsrc 文件中添加以下行：export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp 。
+
 ### step1 建图（如果不更换world,则不需要建图）
 
 1.使用gmapping算法建图
@@ -124,7 +134,7 @@ sudo chmod 777 /dev/ttyUSB0
 启动小车节点
 
 ```
-ros2 run mick_bringup mick_bringup
+ros2 launch mick_bringup mickrobotx4.launch
 ```
 
 ### 1.4 启动键盘控制
@@ -144,9 +154,28 @@ ros2 run keyboard keyboard
 
 ## 2.2 运行建图节点
 
+1.使用gmapping算法建图
+
+```
+ros2 launch slam_gmapping_sim slam_gmapping.launch.py 
+```
+
+2.按键控制小车移动扫图
+
+新建一个终端，利用键盘控制节点控制小车，在目录 **sensor_interface**目录下有键盘控制节点 keyboard，启动该节点利用键盘方向件以及 w x a d s 按键 分别控制小车前、后、左、右、停止。
 
 
+ ```
+ros2 run keyboard keyboard
+ ```
 
+3.保存地图
+
+```
+ros2 run nav2_map_server map_saver_cli  -f ~/map_name
+```
+
+### 
 
 ## 2.3 运行导航节点
 
