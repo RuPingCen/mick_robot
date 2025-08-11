@@ -53,14 +53,34 @@ ros2 launch mickrobot_description gazebo.launch.py
 
 ## 1.2 在Gazebo仿真环境中启动导航测试程序
 
+注：需要将mickrobot_description/urdf/mickrobot_stl.urdf文件中的3D 模型的路径修改为自己电脑上文件存放路径
+
+### step1 建图（如果不更换world,则不需要建图）
+
 1.使用gmapping算法建图
 
 ```
 ros2 launch slam_gmapping_sim slam_gmapping.launch.py 
 ```
 
-（如果不更换world,则不需要建图）
-2.启动gazebo
+2.按键控制小车移动扫图
+
+新建一个终端，利用键盘控制节点控制小车，在目录 **sensor_interface**目录下有键盘控制节点 keyboard，启动该节点利用键盘方向件以及 w x a d s 按键 分别控制小车前、后、左、右、停止。
+
+
+ ```
+ros2 run keyboard keyboard
+ ```
+
+3.保存地图
+
+```
+ros2 run nav2_map_server map_saver_cli  -f ~/map_name
+```
+
+### step2 导航
+
+1.启动gazebo仿真环境
 
 ```
 ros2 launch mickrobot_description gazebo.launch.py 
@@ -69,12 +89,12 @@ ros2 launch mickrobot_description gazebo.launch.py
 3.启动导航仿真
 
 ```
-ros2 launch navigation_sim nav2.launch.py
+ros2 launch navigation_sim nav2_gazebo.launch.py
 ```
 
 <img src="mickrobot_description/fig/gazebo_fig2.gif" alt="gazebo_fig1" style="zoom:100%;" />
 
-## 
+ 
 
 
 

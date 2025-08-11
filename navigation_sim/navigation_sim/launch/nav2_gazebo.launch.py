@@ -21,7 +21,7 @@ def generate_launch_description():
     param_file = PathJoinSubstitution([
         FindPackageShare(navigation_pkg),
         'param',
-        'nav.yaml'
+        'nav_gazebo.yaml'
     ])
 
     return LaunchDescription([

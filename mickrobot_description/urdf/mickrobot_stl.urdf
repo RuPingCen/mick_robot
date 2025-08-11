@@ -24,7 +24,7 @@
     <visual>
       <origin xyz="-0.3 -0.1665 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_body.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_body.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -50,7 +50,7 @@
     <visual>
       <origin xyz="0.12 0 -0.11" rpy="0 0 1.57079"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -81,7 +81,7 @@
     <visual>
       <origin xyz="0.12 0 -0.11" rpy="0 0 1.57079"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -112,7 +112,7 @@
     <visual>
       <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -143,7 +143,7 @@
     <visual>
       <origin xyz="-0.12 0 -0.11" rpy="0 0 -1.57079"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_wheel_8inches_2.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
@@ -174,7 +174,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_sensorkit1.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="/home/crp/ros2_ws/src/mick_robot/mickrobot_description/urdf/mesh/mickx4_sensorkit1.STL" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
