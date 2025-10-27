@@ -1,4 +1,4 @@
-# ROS小车节点
+# 小车底盘ROS/ROS2节点
 
 仅小车底盘节点（**mickrobot_bringup**）同时支持ROS1和ROS2环境。
 
@@ -13,40 +13,40 @@ wget http://fishros.com/install -O fishros && . fishros
 ##### 接着需要安装NAV2的包（可能需要单独安装，以防万一）
 
 ```
- sudo apt install ros-$ROS_DISTRO-nav2-*
+sudo apt install ros-$ROS_DISTRO-nav2-*
 ```
 
 ## 2.  ROS2 节点
 ### 2.1 编译ROS2代码
 
 1. 下载代码
-    ```
-    cd ~/ros2_ws/src
-    git clone https://github.com/RuPingCen/mick_robot.git 
-    ```
+```
+cd ~/ros2_ws/src
+git clone https://github.com/RuPingCen/mick_robot.git 
+```
 
 2. 返回到工作空间主目录，使用colcon build进行编译:
-    ```
-    cd ~/ros2_ws
-    colcon build
-    sourse install/setup.bash
-    ```
-    
+```
+cd ~/ros2_ws
+colcon build
+sourse install/setup.bash
+```
+
 3. 当前节点同时支持串口和udp客户端的通讯方式，可通过launc文件中的参数communication_mode进行选择，communication_mode=0表示串口模式，communication_mode=1表示网口模式， 串口波特率为115200，udp连接信息（服务端IP192.168.1.30 端口1230。
 
-  网口注意事项： 查看本机IP地址是否在192.168.1.X网段，使用ping 192.168.1.30 测试网络是否连通
+​	**网口注意事项**： 查看本机IP地址是否在192.168.1.X网段，使用ping 192.168.1.30 测试网络是否连通
 
-  串口注意事项：在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
+​	**串口注意事项**：在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
 
-    ```
-    sudo chmod 777 /dev/ttyUSB0
-    ```
+```
+sudo chmod 777 /dev/ttyUSB0
+```
 
 4. 最后在编译无报错之后就可以运行了:
 
-    ```
-    ros2 launch mick_bringup mickrobotx4_ros2.launch.py
-    ```
+```
+ros2 launch mick_bringup mickrobotx4_ros2.launch.py
+```
 
 ### 2.2 通过命令行控制小车
 
