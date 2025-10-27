@@ -16,18 +16,6 @@ wget http://fishros.com/install -O fishros && . fishros
  sudo apt install ros-$ROS_DISTRO-nav2-*
 ```
 
-若提示serial库没有安装，可将thridpart_lib文件夹下的serial库安装安装
-
-```
-cp thridpart_lib/serial.zip ~/
-cd ~
-unzip serial
-cd serial && mkdir build
-cmake .. && make
-sudo make install
-```
-
-
 ## 2.  ROS2 节点
 ### 2.1 编译ROS2代码
 
@@ -44,7 +32,12 @@ sudo make install
     sourse install/setup.bash
     ```
     
-3. 在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
+3. 当前节点同时支持串口和udp客户端的通讯方式，可通过launc文件中的参数communication_mode进行选择，communication_mode=0表示串口模式，communication_mode=1表示网口模式， 串口波特率为115200，udp连接信息（服务端IP192.168.1.30 端口1230。
+
+  网口注意事项： 查看本机IP地址是否在192.168.1.X网段，使用ping 192.168.1.30 测试网络是否连通
+
+  串口注意事项：在运行之前，由于节点里面涉及到串口的打开，因此需要先打开串口权限:
+
     ```
     sudo chmod 777 /dev/ttyUSB0
     ```
@@ -52,7 +45,7 @@ sudo make install
 4. 最后在编译无报错之后就可以运行了:
 
     ```
-    ros2 launch mick_bringup mickrobotx4.launch.py
+    ros2 launch mick_bringup mickrobotx4_ros2.launch.py
     ```
 
 ### 2.2 通过命令行控制小车
@@ -77,7 +70,7 @@ ros2 run keyboard keyboard
 
 ### 3.1 编译ROS1代码
 
- **step1:** 将ROS_Node中的mick_bringup目标代码拷贝到ROS工作空间进行编译
+ **step1:** 将mick_robot仓库中的mick_bringup目标代码拷贝到ROS工作空间进行编译
 
 ```shell
 cp -r mick_bringup ~/catkin_ws/src
@@ -177,4 +170,15 @@ roslaunch turtlebot3_bringup turtlebot3_model.launch
 ```
 
 
+## 常见错误及解决方法
 
+若提示serial库没有安装，可将thridpart_lib文件夹下的serial库安装安装
+
+```
+cp thridpart_lib/serial.zip ~/
+cd ~
+unzip serial
+cd serial && mkdir build
+cmake .. && make
+sudo make install
+```

@@ -72,6 +72,7 @@ elseif(${ROS_VERSION} EQUAL 2)
   find_package(tf2_ros REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
 
+  find_package(Boost REQUIRED COMPONENTS system)
 
   set(CMAKE_INSTALL_RPATH /usr/local/lib)
   find_package(serial REQUIRED)

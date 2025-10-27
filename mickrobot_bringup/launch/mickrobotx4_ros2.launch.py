@@ -13,6 +13,7 @@ def generate_launch_description():
                 {'baud': 115200},
                 {'chassis_type': 0},
                 {'is_pub_path': 0},
+                {'communication_mode': 1},
                 {'sub_cmdvel_topic': 'mickrobot/cmd_vel'},
                 {'pub_odom_topic': 'mickrobot/odom'},
                 {'pub_imu_topic': 'mickrobot/Imu'},
