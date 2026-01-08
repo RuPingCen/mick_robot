@@ -35,11 +35,13 @@ ros2 launch path_tracking pure_pursuit.launch.py
 ros2 launch path_tracking stanley.launch.py
 ```
 
-### 2.4 仅启动路径发布器
+### 2.4 发布待跟踪的轨迹
 
 ```bash
-ros2 launch path_tracking path_only.launch.py
+ros2 launch path_pub path_pub.launch.py
 ```
+
+当前可选轨迹文件（octagon_path.txt、square_path.txt、circle_path.txt）
 
 ### 2.5 话题说明
 
