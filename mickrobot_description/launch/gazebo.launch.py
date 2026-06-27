@@ -13,13 +13,14 @@ def generate_launch_description():
     urdf_gazebo_name = "mickrobot_stl.urdf"
     urdf_rviz_name = "mickrobot_stl_rviz.urdf"
 
+
     ld = LaunchDescription()
     pkg_share = FindPackageShare(package=package_name).find(package_name)
     urdf_model_path = os.path.join(pkg_share, f'urdf/{urdf_gazebo_name}')
     urdf_model_rviz_path = os.path.join(pkg_share, f'urdf/{urdf_rviz_name}')
     world_path = os.path.join(pkg_share, 'worlds', 'nav.world') 
 
-    default_rviz_config_path = os.path.join(pkg_share, 'rviz/urdf_gazebo.rviz')
+    default_rviz_config_path = os.path.join(pkg_share, 'rviz/gazebo.rviz')
 
     # Gazebo Server
     start_gazebo_cmd = ExecuteProcess(

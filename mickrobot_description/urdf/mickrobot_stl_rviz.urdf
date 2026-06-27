@@ -67,7 +67,7 @@
     </inertial>
   </link>
  
-  <joint   name="right_back_wheel_joint" type="continuous">
+  <joint   name="right_back_wheel_joint" type="fixed">
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_back_wheel"/>
@@ -97,7 +97,7 @@
     </inertial>
   </link>
  
-  <joint   name="right_front_wheel_joint" type="continuous">
+  <joint   name="right_front_wheel_joint" type="fixed">
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="right_front_wheel"/>
@@ -127,7 +127,7 @@
     </inertial>
   </link>
  
-  <joint   name="left_back_wheel_joint" type="continuous">
+  <joint   name="left_back_wheel_joint" type="fixed">
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="left_back_wheel"/>
@@ -158,7 +158,7 @@
     </inertial>
   </link>
  
-  <joint   name="left_front_wheel_joint" type="continuous">
+  <joint   name="left_front_wheel_joint" type="fixed">
     <axis xyz="1 0 0"/>
     <parent   link="base_link"/>
     <child   link="left_front_wheel"/>
@@ -281,6 +281,36 @@
       <parent link="base_link" />
       <child link="laser_link" />
       <origin xyz="0.23 0.0 0.38" />
+  </joint>
+
+
+ 
+
+  <!-- 3d lidar -->
+  <link   name="lidar_link">
+    <visual>
+      <origin xyz="0.03 -0.03 0" rpy="1.57079 0 3.14159"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/lidar.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+
+
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00008333" ixy="0.0" ixz="0.0" iyy="0.00008333" iyz="0.0" izz="0.00008333"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="lidar_joint" type="fixed">  
+    <parent   link="base_link"/>
+    <child   link="lidar_link"/>
+    <origin   xyz="0.23 0.0 0.40"/>
+     <axis xyz="0 0 1"/>
+  <limit effort="0" velocity="0"/>
+  <dynamics damping="1000" friction="1000"/>
   </joint>
 
   <!-- camera -->

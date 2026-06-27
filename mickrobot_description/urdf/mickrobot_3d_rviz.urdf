@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<robot name="mickrobot" xmlns:xacro="http://ros.org/wiki/xacro">
+ 
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  <material name="green">
+    <color rgba="0.0 0.8 0.0 1.0"/>
+  </material>
+  <material name="grey">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  <material name="invisible">
+    <color rgba="0 0 0 0"/>  
+  </material>
+
+  <link name="base_footprint">
+    <visual>
+      <geometry>
+        <sphere radius="0.001" />  
+      </geometry>
+      <material name="invisible"/>
+    </visual>
+  </link>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/body1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="blue"/> </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.12" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.90 0.4 0.24"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <mass value="25"/>
+      <origin xyz="0.0 0.0 0.12" rpy="0 0 0"/>
+      <inertia 
+        ixx="0.212" ixy="0" ixz="0"  
+        iyy="1.03" iyz="0"           
+        izz="1.16"/>
+    </inertial>
+  </link>
+
+  <link name="right_back_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/> </visual>
+
+    <collision>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <inertia ixx="0.0075" ixy="0" ixz="0" iyy="0.0075" iyz="0" izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint name="right_back_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent link="base_link"/>
+    <child link="right_back_wheel"/>
+    <origin xyz="-0.425 -0.35 0.06"/>
+    <limit effort="100" velocity="100"/>
+  </joint>
+
+  <link name="right_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/> </visual>
+
+    <collision>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <inertia ixx="0.0075" ixy="0" ixz="0" iyy="0.0075" iyz="0" izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint name="right_front_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent link="base_link"/>
+    <child link="right_front_wheel"/>
+    <origin xyz="0.425 -0.35 0.06"/>
+    <limit effort="100" velocity="100"/>
+  </joint>
+
+  <link name="left_back_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/> </visual>
+
+    <collision>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <inertia ixx="0.0075" ixy="0" ixz="0" iyy="0.0075" iyz="0" izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint name="left_back_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent link="base_link"/>
+    <child link="left_back_wheel"/>
+    <origin xyz="-0.425 0.35 0.06"/>
+    <limit effort="100" velocity="100"/>
+  </joint>
+
+  <link name="left_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/> </visual>
+
+    <collision>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <inertia ixx="0.0075" ixy="0" ixz="0" iyy="0.0075" iyz="0" izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint name="left_front_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent link="base_link"/>
+    <child link="left_front_wheel"/>
+    <origin xyz="0.425 0.35 0.06"/>
+    <limit effort="100" velocity="100"/>
+  </joint>
+
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0.03 -0.03 0" rpy="1.57079 0 3.14159"/>
+      <geometry>
+        <mesh filename="package://mickrobot_description/urdf/mesh/lidar.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="grey"/> </visual>
+
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00008333" ixy="0.0" ixz="0.0" iyy="0.00008333" iyz="0.0" izz="0.00008333"/>
+    </inertial>
+  </link>
+ 
+  <joint name="lidar_joint" type="continuous">  
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 -0.020 0.40"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="0" velocity="0"/>
+    <dynamics damping="1000" friction="1000"/>
+  </joint>
+
+</robot>

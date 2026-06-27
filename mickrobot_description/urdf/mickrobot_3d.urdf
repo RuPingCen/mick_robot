@@ -1,0 +1,316 @@
+<?xml version="1.0"?>
+<robot name="mickrobot" xmlns:xacro="http://ros.org/wiki/xacro">
+ 
+  <link name="base_footprint">
+    <visual>
+      <geometry>
+        <sphere radius="0.001" />  
+      </geometry>
+      <material name="invisible">
+        <color rgba="0 0 0 0"/>  
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+  </joint>
+
+<!-- base -->
+ <link name="base_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/body1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0.0 0.0 0.12" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.90 0.4 0.24"/>
+      </geometry>
+    </collision>
+
+   <inertial>
+      <mass value="25"/>
+      <origin xyz="0.0 0.0 0.12" rpy="0 0 0"/>
+      <inertia 
+        ixx="0.212" ixy="0" ixz="0"  
+        iyy="1.03" iyz="0"           
+        izz="1.16"/>
+    </inertial>
+  </link>
+
+   <!-- right_back_wheel -->
+   <link   name="right_back_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+<inertia ixx="0.0075"
+  ixy="0"
+  ixz="0"
+  iyy="0.0075"
+  iyz="0"
+  izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="right_back_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent   link="base_link"/>
+    <child   link="right_back_wheel"/>
+    <origin   xyz=" -0.425 -0.35 0.06"/>
+    <limit effort="100"   velocity="100"/>
+  </joint>
+
+ <!-- right_front_wheel -->
+ <link   name="right_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.57079"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 0.05 0" rpy="1.57079 0 0"/>
+<inertia ixx="0.0075"
+  ixy="0"
+  ixz="0"
+  iyy="0.0075"
+  iyz="0"
+  izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="right_front_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent   link="base_link"/>
+    <child   link="right_front_wheel"/>
+    <origin   xyz=" 0.425 -0.35 0.06"/>
+    <limit effort="100"   velocity="100"/>
+  </joint>
+
+ <!-- left_back_wheel -->
+ <link   name="left_back_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <inertia ixx="0.0075"
+  ixy="0"
+  ixz="0"
+  iyy="0.0075"
+  iyz="0"
+  izz="0.01125"/>
+      </inertial>
+  </link>
+ 
+  <joint   name="left_back_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent   link="base_link"/>
+    <child   link="left_back_wheel"/>
+    <origin   xyz=" -0.425 0.35 0.06"/>
+    <limit effort="100"   velocity="100"/>
+  </joint>
+
+ <!-- left_front_wheel -->
+ <link   name="left_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -1.57079"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/wheel1.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+      <geometry>
+        <cylinder radius="0.15" length="0.06"/>
+      </geometry>
+    </collision>
+    
+    <inertial>  
+      <mass value="1"/>
+      <origin xyz="0 -0.05 0" rpy="1.57079 0 0"/>
+<inertia ixx="0.0075"
+  ixy="0"
+  ixz="0"
+  iyy="0.0075"
+  iyz="0"
+  izz="0.01125"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="left_front_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <parent   link="base_link"/>
+    <child   link="left_front_wheel"/>
+    <origin   xyz=" 0.425 0.35 0.06"/>
+    <limit effort="100"   velocity="100"/>
+  </joint>
+
+  <!-- lidar 3D -->
+  <link   name="lidar_link">
+    <visual>
+      <origin xyz="0.03 -0.03 0" rpy="1.57079 0 3.14159"/>
+      <geometry>
+        <mesh filename="/home/mickrobot/ros2_mick_ws/src/mick_robot/mickrobot_description/urdf/mesh/lidar.STL" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00008333" ixy="0.0" ixz="0.0" iyy="0.00008333" iyz="0.0" izz="0.00008333"/>
+    </inertial>
+  </link>
+ 
+  <joint   name="lidar_joint" type="continuous">  
+    <parent   link="base_link"/>
+    <child   link="lidar_link"/>
+    <origin   xyz="0 -0.020 0.40"/>
+     <axis xyz="0 0 1"/>
+  <limit effort="0" velocity="0"/>
+  <dynamics damping="1000" friction="1000"/>
+  </joint>
+
+ <!-- diff_drive_plugin -->
+ 
+ <gazebo reference="left_front_wheel">
+  <mu1>0.7</mu1>
+  <mu2>0.25</mu2>
+  <fdir1>1 0 0</fdir1>
+</gazebo>
+
+<gazebo reference="right_front_wheel">
+  <mu1>0.7</mu1>
+  <mu2>0.25</mu2>
+  <fdir1>1 0 0</fdir1>
+</gazebo>
+
+<gazebo reference="left_back_wheel">
+  <mu1>0.7</mu1>
+  <mu2>0.25</mu2>
+  <fdir1>1 0 0</fdir1>
+</gazebo>
+
+<gazebo reference="right_back_wheel">
+  <mu1>0.7</mu1>
+  <mu2>0.25</mu2>
+  <fdir1>1 0 0</fdir1>
+</gazebo>
+  
+  <gazebo>
+    <plugin name='skid_steer_drive' filename='libgazebo_ros_diff_drive.so'>
+
+      <ros>
+          <namespace> </namespace>
+      </ros>
+
+      <num_wheel_pairs>2</num_wheel_pairs>
+
+      <!-- Pair1 -->
+      <left_joint>left_front_wheel_joint</left_joint>
+      <right_joint>right_front_wheel_joint</right_joint>
+
+      <!-- Pair2 -->
+      <left_joint>left_back_wheel_joint</left_joint>
+      <right_joint>right_back_wheel_joint</right_joint>
+
+
+      <!-- Kinematics -->
+      <wheel_separation>0.70</wheel_separation>
+      <wheel_separation>0.70</wheel_separation>
+
+      <wheel_diameter>0.30</wheel_diameter>
+      <update_rate>30</update_rate>
+      <wheel_diameter>0.30</wheel_diameter>
+
+      <!-- limits -->
+      <max_wheel_torque>50</max_wheel_torque>
+      <max_wheel_acceleration>5.0</max_wheel_acceleration>
+
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>true</publish_wheel_tf>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+
+    </plugin>   
+  </gazebo>
+
+  <gazebo reference="lidar_link">
+    <sensor type="ray" name="velodyne">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>5</update_rate>
+  
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>900</samples>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+  
+          <vertical>
+            <samples>16</samples>
+            <min_angle>-0.30</min_angle>
+            <max_angle>0.30</max_angle>
+          </vertical>
+        </scan>
+  
+        <range>
+          <min>0.1</min>
+          <max>80.0</max>
+        </range>
+      </ray>
+  
+      <plugin name="gazebo_ros_velodyne" filename="libgazebo_ros_velodyne_laser.so">
+        <topicName>/points_raw</topicName>
+        <frameName>lidar_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  
+ 
+</robot>
