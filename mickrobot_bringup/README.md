@@ -169,8 +169,17 @@ export TURTLEBOT3_MODEL=burger
 roslaunch turtlebot3_bringup turtlebot3_model.launch
 ```
 
+## 4 Python接口说明
 
-## 常见错误及解决方法
+为方便AI程序及DORA节点调用该底盘接口，在src/python_api文件夹中新增加python接口。可以通过ROS2 aunch 启动src/python_api文件夹中 mickx4_bringup_v3_1.py  测试python API 接口。
+
+```
+ros2 launch mick_bringup mickrobotx4_ros2_python.launch.py
+```
+
+
+
+## 5.常见错误及解决方法
 
 若提示serial库没有安装，可将thridpart_lib文件夹下的serial库安装安装
 

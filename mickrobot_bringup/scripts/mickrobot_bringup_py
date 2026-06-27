@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Entry-point script for the mickrobot_bringup Python node.
+
+Works in two layouts:
+  1. Installed:  <install>/lib/mickrobot_bringup/python_api/*.py
+                 <install>/lib/mickrobot_bringup/mickrobot_bringup_py
+                 → just `import python_api.mickx4_bringup_v3_1`
+  2. Dev:        scripts/mickrobot_bringup_py
+                 src/python_api/*.py
+                 → add ../src to sys.path and import python_api.*
+"""
+import os
+import sys
+
+# Add src/ to path so python_api is importable from both layouts
+_src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
+sys.path.insert(0, os.path.abspath(_src_dir))
+
+from python_api.mickx4_bringup_v3_1 import main
+
+if __name__ == '__main__':
+    main()

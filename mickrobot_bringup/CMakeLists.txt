@@ -50,7 +50,7 @@ if(${ROS_VERSION} EQUAL 1)
     ${EIGEN3_INCLUDE_DIR}
   )
 
-  add_executable(mickrobot_bringup src/mickx4_bringup_v3.cpp)
+  add_executable(mickrobot_bringup src/cpp_api/mickx4_bringup_ros1.cpp)
   target_link_libraries(mickrobot_bringup
     ${catkin_LIBRARIES}
   )
@@ -101,7 +101,7 @@ elseif(${ROS_VERSION} EQUAL 2)
   #  serial
   #)
 
-  add_executable(mickrobot_bringup src/mickx4_bringup_v3.1.cpp  src/mick_chassis_protocol.cpp)
+  add_executable(mickrobot_bringup src/cpp_api/mickx4_bringup_v3.1.cpp  src/cpp_api/mick_chassis_protocol.cpp)
   #add_executable(mickrobot_bringup src/mickx4_bringup_v3.cpp)
     
   ament_target_dependencies(mickrobot_bringup 
@@ -116,6 +116,15 @@ elseif(${ROS_VERSION} EQUAL 2)
 
   install(TARGETS
     mickrobot_bringup
+    DESTINATION lib/${PROJECT_NAME}
+  )
+
+  # Install Python package (src/python_api -> python_api at install time)
+  install(DIRECTORY src/python_api/
+    DESTINATION lib/${PROJECT_NAME}/python_api
+    FILES_MATCHING PATTERN "*.py"
+  )
+  install(PROGRAMS scripts/mickrobot_bringup_py
     DESTINATION lib/${PROJECT_NAME}
   )
 
