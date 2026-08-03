@@ -24,6 +24,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 
 #include <tf2/LinearMath/Quaternion.h>
@@ -96,7 +97,7 @@ public:
 		imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>(pub_imu_topic_, rclcpp::QoS(20).transient_local());
 		odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(pub_odom_topic_, 20);
 		path_pub_ = this->create_publisher<nav_msgs::msg::Path>(pub_odom_topic_ + "/path", rclcpp::QoS(20).transient_local());
-		twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(pub_twist_topic_, 20);
+		twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(pub_twist_topic_, 20);
 		// TF广播器初始化
 		odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
@@ -147,7 +148,7 @@ private:
 	rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
 	rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 	rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
-	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
+	rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
 
 	rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_sub_;
 
@@ -237,12 +238,14 @@ private:
 		// 发布里程计
 		odom_pub_->publish(odom);
 
-		// 发布带时间戳的 Twist 消息（速度数据）
-		geometry_msgs::msg::Twist twist_msg;
-		twist_msg.linear.x = odom_m.vx;
-		twist_msg.linear.y = odom_m.vy;
-		twist_msg.angular.z = odom_m.vz;
-		twist_pub_->publish(twist_msg);
+		// 发布带时间戳的 TwistStamped 消息（速度数据）
+		geometry_msgs::msg::TwistStamped twist_stamped;
+		twist_stamped.header.stamp = clock.now();
+		twist_stamped.header.frame_id = "base_link";
+		twist_stamped.twist.linear.x = odom_m.vx;
+		twist_stamped.twist.linear.y = odom_m.vy;
+		twist_stamped.twist.angular.z = odom_m.vz;
+		twist_pub_->publish(twist_stamped);
 
 		if (is_pub_path_)
 		{

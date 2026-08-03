@@ -15,7 +15,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
-from geometry_msgs.msg import PoseStamped, Quaternion, TransformStamped, Twist
+from geometry_msgs.msg import PoseStamped, Quaternion, TransformStamped, Twist, TwistStamped
 from nav_msgs.msg import Odometry, Path
 from sensor_msgs.msg import Imu, Joy
 from tf2_ros import TransformBroadcaster
@@ -129,7 +129,7 @@ class MickRobotNode(Node):
         self.imu_pub_  = self.create_publisher(Imu,      self.pub_imu_topic_,   qos_transient)
         self.odom_pub_ = self.create_publisher(Odometry, self.pub_odom_topic_,  20)
         self.path_pub_  = self.create_publisher(Path,     self.pub_odom_topic_ + "/path", qos_transient)
-        self.twist_pub_ = self.create_publisher(Twist,    self.pub_twist_topic_, 20)
+        self.twist_pub_ = self.create_publisher(TwistStamped, self.pub_twist_topic_, 20)
 
         # Subscriber
         self.command_sub_ = self.create_subscription(
@@ -201,12 +201,14 @@ class MickRobotNode(Node):
         odom.twist.twist.angular.z = odom_m.vz
         self.odom_pub_.publish(odom)
 
-        # 发布带时间戳的 Twist 消息（速度数据）
-        twist_msg = Twist()
-        twist_msg.linear.x  = odom_m.vx
-        twist_msg.linear.y  = odom_m.vy
-        twist_msg.angular.z = odom_m.vz
-        self.twist_pub_.publish(twist_msg)
+        # 发布带时间戳的 TwistStamped 消息（速度数据）
+        twist_stamped = TwistStamped()
+        twist_stamped.header.stamp    = now
+        twist_stamped.header.frame_id = 'base_link'
+        twist_stamped.twist.linear.x  = odom_m.vx
+        twist_stamped.twist.linear.y  = odom_m.vy
+        twist_stamped.twist.angular.z = odom_m.vz
+        self.twist_pub_.publish(twist_stamped)
 
         if self.is_pub_path_:
             pose_stamped = PoseStamped()
