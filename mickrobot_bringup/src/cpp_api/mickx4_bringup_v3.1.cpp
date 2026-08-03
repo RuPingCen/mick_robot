@@ -4,18 +4,15 @@
 #include <string>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sstream>
 #include <vector>
 #include <math.h>
 #include <chrono>
 #include <thread>
 #include <deque>
-#include <chrono>
-#include <iostream>
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <array>
-#include "sys/time.h"
+#include <sys/time.h>
 
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
@@ -55,6 +52,8 @@ public:
 		declare_parameter<std::string>("pub_imu_topic", pub_imu_topic_);
 		declare_parameter<std::string>("joy_topic", joy_topic_);
 
+		declare_parameter<std::string>("pub_twist_topic", pub_twist_topic_);
+
 		declare_parameter<std::string>("dev", dev_);
 		declare_parameter<int>("baud", baud_);
 		// declare_parameter<int>("time_out",time_out);
@@ -74,6 +73,7 @@ public:
 		communication_mode_ = get_parameter("communication_mode").as_int(); // 0 for serial   1 for udp
 		udp_ip_ = get_parameter("udp_ip").as_string();
 		udp_port_ = get_parameter("udp_port").as_int();
+		pub_twist_topic_ = get_parameter("pub_twist_topic").as_string();
 
 		RCLCPP_INFO_STREAM(this->get_logger(), "sub_cmdvel_topic_:   " << sub_cmdvel_topic_);
 		RCLCPP_INFO_STREAM(this->get_logger(), "pub_odom_topic_:   " << pub_odom_topic_);
@@ -88,6 +88,7 @@ public:
 		RCLCPP_INFO_STREAM(this->get_logger(), "communication_mode_:   " << communication_mode_); // 0: serial, 1: UDP
 		RCLCPP_INFO_STREAM(this->get_logger(), "udp_ip_:   " << udp_ip_);
 		RCLCPP_INFO_STREAM(this->get_logger(), "udp_port_:   " << udp_port_);
+		RCLCPP_INFO_STREAM(this->get_logger(), "pub_twist_topic_:   " << pub_twist_topic_);
 
 		command_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(sub_cmdvel_topic_, 10, std::bind(&MickRobotNode::cmd_vel_callback, this, std::placeholders::_1));
 
@@ -95,6 +96,7 @@ public:
 		imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>(pub_imu_topic_, rclcpp::QoS(20).transient_local());
 		odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(pub_odom_topic_, 20);
 		path_pub_ = this->create_publisher<nav_msgs::msg::Path>(pub_odom_topic_ + "/path", rclcpp::QoS(20).transient_local());
+		twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(pub_twist_topic_, 20);
 		// TF广播器初始化
 		odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
@@ -124,6 +126,7 @@ private:
 	std::string pub_odom_topic_ = "odom";
 	std::string pub_imu_topic_ = "Imu";
 	std::string joy_topic_ = "rc_remotes/joy";
+	std::string pub_twist_topic_ = "odom/twist";
 
 	int communication_mode_ = 0; // Default to serial
 
@@ -144,6 +147,7 @@ private:
 	rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
 	rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 	rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
 
 	rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_sub_;
 
@@ -233,6 +237,13 @@ private:
 		// 发布里程计
 		odom_pub_->publish(odom);
 
+		// 发布带时间戳的 Twist 消息（速度数据）
+		geometry_msgs::msg::Twist twist_msg;
+		twist_msg.linear.x = odom_m.vx;
+		twist_msg.linear.y = odom_m.vy;
+		twist_msg.angular.z = odom_m.vz;
+		twist_pub_->publish(twist_msg);
+
 		if (is_pub_path_)
 		{
 			// 发布小车里程计数据推算的轨迹
@@ -253,9 +264,9 @@ private:
 		IMU_msg.header.stamp = clock.now();
 		IMU_msg.header.frame_id = "imu";
 
-		Eigen::Vector3d ea0(imu_m.roll * M_PI / 180.0,
+		Eigen::Vector3d ea0(imu_m.yaw * M_PI / 180.0,
 							imu_m.pitch * M_PI / 180.0,
-							imu_m.yaw * M_PI / 180.0);
+							imu_m.roll * M_PI / 180.0);
 		Eigen::Matrix3d R;
 		R = Eigen::AngleAxisd(ea0[0], ::Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(ea0[1], ::Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(ea0[2], ::Eigen::Vector3d::UnitX());
 

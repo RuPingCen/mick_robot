@@ -4,7 +4,7 @@
 
 ## 1.环境说明
 
-##### 该节点使用的是ROS2的Galactic版本，使用鱼香ROS的一键安装，按照步骤来即可
+##### 该节点使用的是ROS2的Humble版本，使用鱼香ROS的一键安装，按照步骤来即可
 
 ```
 wget http://fishros.com/install -O fishros && . fishros

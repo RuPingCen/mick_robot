@@ -496,18 +496,18 @@ namespace MickRobot
 			v2 = v2 / (WHEEL_D * WHEEL_PI) * 60;
 			v3 = v3 / (WHEEL_D * WHEEL_PI) * 60;
 			v4 = v4 / (WHEEL_D * WHEEL_PI) * 60;
-			// send_rpm_to_chassis(v1,v2,v3,v4);
+			send_rpm_to_chassis(v1, v2, v3, v4);
 		}
 		else if (chassis_measurements.chassis_type == 2) // 阿卡曼模式
 		{
-			// send_speed_to_Ackerchassis(speed_x, speed_w); //直接发送目标速度 和 角速度
-			// ROS_INFO_STREAM("send_speed_to_Ackerchassis: "<<speed_x<<"  "<<speed_w);
+			send_speed_to_Ackerchassis(speed_x, speed_w); // 直接发送目标速度 和 角速度
+			cout << "send_speed_to_Ackerchassis: " << speed_x << "  " << speed_w;
 			return;
 		}
 		else if (chassis_measurements.chassis_type == 3) // 4WS4WD模式
 		{
-			// send_speed_to_4WS4WDchassis(speed_x,speed_y,speed_w);
-			//  RCLCPP_INFO_STREAM(node->get_logger(),"send_speed_to_4WS4WDchassis: "<<speed_x<<"  "<<speed_y<<"  "<<speed_w);
+			send_speed_to_4WS4WDchassis(speed_x, speed_y, speed_w);
+			// RCLCPP_INFO_STREAM(node->get_logger(), "send_speed_to_4WS4WDchassis: " << speed_x << "  " << speed_y << "  " << speed_w);
 			cout << "send_speed_to_4WS4WDchassis: " << speed_x << "  " << speed_y << "  " << speed_w << endl;
 			return;
 		}
@@ -598,7 +598,7 @@ namespace MickRobot
 		send_bytes_to_udp_or_serial(data_tem, counter);
 	}
 
-	void MickRobotCHASSIS::send_speed_to_Ackerchassis(serial::Serial &ser_port_fd, float x, float w)
+	void MickRobotCHASSIS::send_speed_to_Ackerchassis(float x, float w)
 	{
 		uint8_t data_tem[50];
 		unsigned int speed_0ffset = 10; // 速度偏移值 10ｍ/s，把速度转换成正数发送
@@ -625,9 +625,10 @@ namespace MickRobot
 		data_tem[2] = counter - 2;
 		data_tem[counter++] = 0xEF;
 		data_tem[counter++] = 0xFE;
-		ser_port_fd.write(data_tem, counter);
+		// ser_port_fd.write(data_tem, counter);
+		send_bytes_to_udp_or_serial(data_tem, counter);
 	}
-	void MickRobotCHASSIS::send_speed_to_4WS4WDchassis(serial::Serial &ser_port_fd, float x, float y, float w)
+	void MickRobotCHASSIS::send_speed_to_4WS4WDchassis(float x, float y, float w)
 	{
 		uint8_t data_tem[50];
 		unsigned int speed_0ffset = 10; // 速度偏移值 10ｍ/s，把速度转换成正数发送
@@ -653,7 +654,8 @@ namespace MickRobot
 		data_tem[2] = counter - 2;
 		data_tem[counter++] = 0xEF;
 		data_tem[counter++] = 0xFE;
-		ser_port_fd.write(data_tem, counter);
+		// ser_port_fd.write(data_tem, counter);
+		send_bytes_to_udp_or_serial(data_tem, counter);
 	}
 
 	/**********************************************************
@@ -662,7 +664,7 @@ namespace MickRobot
 	 * 电机的转速 单位　RPM
 	 * 角度    单位  °度
 	 **********************************************************/
-	void MickRobotCHASSIS::send_rpm_to_4WS4WDchassis(serial::Serial &ser_port_fd, std::vector<float> vw)
+	void MickRobotCHASSIS::send_rpm_to_4WS4WDchassis(std::vector<float> vw)
 	{
 		if (vw.size() < 12)
 		{
@@ -701,7 +703,8 @@ namespace MickRobot
 		data_tem[counter++] = 0xEF;
 		data_tem[counter++] = 0xFE;
 
-		ser_port_fd.write(data_tem, counter);
+		// ser_port_fd.write(data_tem, counter);
+		send_bytes_to_udp_or_serial(data_tem, counter);
 	}
 
 	void MickRobotCHASSIS::clear_odometry_chassis(void)
@@ -862,7 +865,7 @@ namespace MickRobot
 			return;
 		}
 
-		if (chassis_measurements.odom_measurements.available = 0x01) // 直接使用底盘上传的里程计数据
+		if (chassis_measurements.odom_measurements.available == 0x01) // 直接使用底盘上传的里程计数据
 		{
 			linear_x = chassis_measurements.odom_measurements.vx;
 			linear_y = 0;

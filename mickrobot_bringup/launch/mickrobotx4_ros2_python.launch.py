@@ -23,6 +23,7 @@ def generate_launch_description():
                 {'pub_odom_topic': 'mickrobot/odom'},
                 {'pub_imu_topic': 'mickrobot/Imu'},
                 {'joy_topic': 'mickrobot/rc_remotes/joy'},
+                {'pub_twist_topic': 'mickrobot/odom/twist'},
             ]
         ),
         Node(

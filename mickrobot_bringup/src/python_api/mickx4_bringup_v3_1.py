@@ -68,6 +68,7 @@ class MickRobotNode(Node):
         self.pub_odom_topic_   = 'odom'
         self.pub_imu_topic_    = 'Imu'
         self.joy_topic_        = 'rc_remotes/joy'
+        self.pub_twist_topic_  = 'odom/twist'
         self.communication_mode_ = 0
         self.is_pub_path_ = 0
         self.dev_  = '/dev/ttyUSB0'
@@ -82,6 +83,7 @@ class MickRobotNode(Node):
         self.declare_parameter('pub_odom_topic',       self.pub_odom_topic_)
         self.declare_parameter('pub_imu_topic',        self.pub_imu_topic_)
         self.declare_parameter('joy_topic',            self.joy_topic_)
+        self.declare_parameter('pub_twist_topic',     self.pub_twist_topic_)
         self.declare_parameter('dev',                  self.dev_)
         self.declare_parameter('baud',                 self.baud_)
         self.declare_parameter('delay',                self.delay_)
@@ -98,6 +100,7 @@ class MickRobotNode(Node):
         self.pub_odom_topic_   = self.get_parameter('pub_odom_topic').get_parameter_value().string_value
         self.pub_imu_topic_    = self.get_parameter('pub_imu_topic').get_parameter_value().string_value
         self.joy_topic_        = self.get_parameter('joy_topic').get_parameter_value().string_value
+        self.pub_twist_topic_  = self.get_parameter('pub_twist_topic').get_parameter_value().string_value
         self.is_pub_path_      = self.get_parameter('is_pub_path').get_parameter_value().integer_value
         self.chassis_type_     = self.get_parameter('chassis_type').get_parameter_value().integer_value
         self.communication_mode_ = self.get_parameter('communication_mode').get_parameter_value().integer_value
@@ -115,6 +118,7 @@ class MickRobotNode(Node):
         self.get_logger().info(f"communication_mode_:   {self.communication_mode_}")
         self.get_logger().info(f"udp_ip_:   {self.udp_ip_}")
         self.get_logger().info(f"udp_port_:   {self.udp_port_}")
+        self.get_logger().info(f"pub_twist_topic_:   {self.pub_twist_topic_}")
 
         # Publishers
         qos_transient = QoSProfile(
@@ -124,7 +128,8 @@ class MickRobotNode(Node):
         self.joy_pub_  = self.create_publisher(Joy,      self.joy_topic_,       20)
         self.imu_pub_  = self.create_publisher(Imu,      self.pub_imu_topic_,   qos_transient)
         self.odom_pub_ = self.create_publisher(Odometry, self.pub_odom_topic_,  20)
-        self.path_pub_ = self.create_publisher(Path,     self.pub_odom_topic_ + "/path", qos_transient)
+        self.path_pub_  = self.create_publisher(Path,     self.pub_odom_topic_ + "/path", qos_transient)
+        self.twist_pub_ = self.create_publisher(Twist,    self.pub_twist_topic_, 20)
 
         # Subscriber
         self.command_sub_ = self.create_subscription(
@@ -195,6 +200,13 @@ class MickRobotNode(Node):
         odom.twist.twist.linear.y  = odom_m.vy
         odom.twist.twist.angular.z = odom_m.vz
         self.odom_pub_.publish(odom)
+
+        # 发布带时间戳的 Twist 消息（速度数据）
+        twist_msg = Twist()
+        twist_msg.linear.x  = odom_m.vx
+        twist_msg.linear.y  = odom_m.vy
+        twist_msg.angular.z = odom_m.vz
+        self.twist_pub_.publish(twist_msg)
 
         if self.is_pub_path_:
             pose_stamped = PoseStamped()

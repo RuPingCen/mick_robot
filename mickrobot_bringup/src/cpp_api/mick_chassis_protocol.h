@@ -8,7 +8,6 @@
 #include <string>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sstream>
 #include <vector>
 #include <math.h>
 #include <chrono>
@@ -24,7 +23,7 @@
 #define WHEEL_L 0.4  // 左右轮子的间距
 #define WHEEL_D 0.17 // 轮子直径  6.5寸的轮子
 // #define  WHEEL_R    WHEEL_D/2.0 			//轮子半径
-#define WHEEL_PI 3.141693 // pi
+#define WHEEL_PI 3.1415926 // pi
 
 namespace MickRobot
 {
@@ -79,9 +78,9 @@ namespace MickRobot
         void send_speed_to_chassis(float speed_x, float speed_y, float speed_w);
         void send_rpm_to_chassis(int w1, int w2, int w3, int w4);
         void send_speed_to_X4chassis(float x, float y, float w);
-        void send_speed_to_Ackerchassis(serial::Serial &ser_port_fd, float x, float w);
-        void send_speed_to_4WS4WDchassis(serial::Serial &ser_port_fd, float x, float y, float w);
-        void send_rpm_to_4WS4WDchassis(serial::Serial &ser_port_fd, std::vector<float> vw);
+        void send_speed_to_Ackerchassis(float x, float w);
+        void send_speed_to_4WS4WDchassis(float x, float y, float w);
+        void send_rpm_to_4WS4WDchassis(std::vector<float> vw);
         void clear_odometry_chassis(void);
 
         size_t read_bytes_from_udp_or_serial(std::string &str_data);

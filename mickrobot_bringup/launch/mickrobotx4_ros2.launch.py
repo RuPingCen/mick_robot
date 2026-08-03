@@ -17,7 +17,8 @@ def generate_launch_description():
                 {'sub_cmdvel_topic': 'mickrobot/cmd_vel'},
                 {'pub_odom_topic': 'mickrobot/odom'},
                 {'pub_imu_topic': 'mickrobot/Imu'},
-                {'joy_topic': 'mickrobot/rc_remotes/joy'} 
+                {'joy_topic': 'mickrobot/rc_remotes/joy'},
+                {'pub_twist_topic': 'mickrobot/odom/twist'},
             ]
         ),
         Node(
